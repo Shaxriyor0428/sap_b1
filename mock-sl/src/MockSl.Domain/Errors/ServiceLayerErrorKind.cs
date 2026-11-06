@@ -8,5 +8,6 @@ public enum ServiceLayerErrorKind
 {
     BadRequest,
     Unauthorized,
+    Forbidden,
     NotFound,
 }

@@ -12113,6 +12113,2740 @@
       ]
     },
     {
+      "name": "09 SQLQueries",
+      "description": "Stage 5. The first requests of the task use the exact text of the roadmap. Uses the run code and the purchase of folder 08, and leaves no saved query behind.",
+      "item": [
+        {
+          "name": "SQL prepare: remove purch_lines from an earlier run",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('removed, or was not there', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL prepare: remove purch_lines_all from an earlier run",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines_all')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines_all')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('removed, or was not there', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL prepare: remove pm_by_supplier from an earlier run",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('removed, or was not there', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL prepare: remove pm_alias from an earlier run",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('removed, or was not there', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL prepare: remove pm_region from an earlier run",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_region')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_region')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('removed, or was not there', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL prepare: remove pm_bad from an earlier run",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_bad')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_bad')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('removed, or was not there', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xaridlar qatorlari bilan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"purch_lines\",\n  \"SqlName\": \"Xaridlar qatorlari bilan\",\n  \"SqlText\": \"SELECT T0.DocNum, T0.DocDate, T0.CardCode, T1.ItemCode, T1.Quantity, T1.Price FROM OPCH T0 INNER JOIN PCH1 T1 ON T0.DocEntry = T1.DocEntry WHERE T0.DocDate >= :fromDate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Exactly the text of the task. It must also run on real SAP: the mentor checks this."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"SqlCode is purch_lines\", () => pm.expect(pm.response.json().SqlCode).to.eql(\"purch_lines\"));",
+                  "pm.test(\"ParamList is fromDate\", () => pm.expect(pm.response.json().ParamList).to.eql(\"fromDate\"));",
+                  "pm.test('names are normalized, the parameter stays', () => { const t = pm.response.json().SqlText; pm.expect(t).to.match(/[\"\\[]OPCH[\"\\]]/); pm.expect(t).to.match(/[\"\\[]DocNum[\"\\]]/); pm.expect(t).to.include(':fromDate'); });",
+                  "pm.test('dates are set by the server', () => { pm.expect(pm.response.json().CreateDate).to.be.a('string'); pm.expect(pm.response.json().UpdateDate).to.be.a('string'); });",
+                  "pm.test('Location has the key', () => pm.expect(decodeURI(pm.response.headers.get('Location'))).to.include(\"SQLQueries('purch_lines')\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL task: with the date, by POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"fromDate='2026-10-01'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.152-153. The value is bound, not added to the text."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('each row has exactly the selected columns', () => pm.response.json().value.forEach(r => pm.expect(Object.keys(r).sort()).to.eql([\"CardCode\", \"DocDate\", \"DocNum\", \"ItemCode\", \"Price\", \"Quantity\"])));",
+                  "pm.test('the purchase of folder 08 is there', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.include(pm.variables.replaceIn('{{run}}X2')));",
+                  "pm.test('the normalized text is in the answer', () => pm.expect(pm.response.json().SqlText).to.include(':fromDate'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL task: with the date, by GET",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1000"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')/List?fromDate='2026-10-01'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')/List"
+              ],
+              "query": [
+                {
+                  "key": "fromDate",
+                  "value": "'2026-10-01'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('each row has exactly the selected columns', () => pm.response.json().value.forEach(r => pm.expect(Object.keys(r).sort()).to.eql([\"CardCode\", \"DocDate\", \"DocNum\", \"ItemCode\", \"Price\", \"Quantity\"])));",
+                  "pm.test('the purchase of folder 08 is there', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.include(pm.variables.replaceIn('{{run}}X2')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL task: a later date leaves purchases out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"fromDate='2026-11-02'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('the purchase of 2026-11-01 is left out', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.not.include(pm.variables.replaceIn('{{run}}X2')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL task: a date with no purchases",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"fromDate='2099-01-01'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('0 rows', () => pm.expect(pm.response.json().value.length).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Barcha xaridlar qatorlari bilan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"purch_lines_all\",\n  \"SqlName\": \"Barcha xaridlar qatorlari bilan\",\n  \"SqlText\": \"SELECT T0.DocNum, T0.DocDate, T0.CardCode, T1.ItemCode, T1.Quantity, T1.Price FROM OPCH T0 INNER JOIN PCH1 T1 ON T0.DocEntry = T1.DocEntry\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Exactly the text of the task. It must also run on real SAP: the mentor checks this."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('no parameters', () => pm.expect(pm.response.json().ParamList).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL task: without a date, by POST with no body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1000"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines_all')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines_all')/List"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('each row has exactly the selected columns', () => pm.response.json().value.forEach(r => pm.expect(Object.keys(r).sort()).to.eql([\"CardCode\", \"DocDate\", \"DocNum\", \"ItemCode\", \"Price\", \"Quantity\"])));",
+                  "pm.test('the purchase of folder 08 is there', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.include(pm.variables.replaceIn('{{run}}X2')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL task: without a date, by GET",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1000"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines_all')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines_all')/List"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('each row has exactly the selected columns', () => pm.response.json().value.forEach(r => pm.expect(Object.keys(r).sort()).to.eql([\"CardCode\", \"DocDate\", \"DocNum\", \"ItemCode\", \"Price\", \"Quantity\"])));",
+                  "pm.test('the purchase of folder 08 is there', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.include(pm.variables.replaceIn('{{run}}X2')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL paging: first page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')/List?fromDate='2026-10-01'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')/List"
+              ],
+              "query": [
+                {
+                  "key": "fromDate",
+                  "value": "'2026-10-01'"
+                }
+              ]
+            },
+            "description": "Guide p.144-145, p.153."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test('Preference-Applied', () => pm.expect(pm.response.headers.get('Preference-Applied')).to.eql('odata.maxpagesize=1'));",
+                  "const link = pm.response.json()['@odata.nextLink'];",
+                  "pm.test('next link has the parameter and the skip', () => { pm.expect(link).to.include('$skip=1'); pm.expect(decodeURIComponent(link)).to.include(\"fromDate='2026-10-01'\"); });",
+                  "pm.environment.set('nextLink', link);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL paging: follow the next link",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{nextLink}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{nextLink}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test('each row has exactly the selected columns', () => pm.response.json().value.forEach(r => pm.expect(Object.keys(r).sort()).to.eql([\"CardCode\", \"DocDate\", \"DocNum\", \"ItemCode\", \"Price\", \"Quantity\"])));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Exact values of one purchase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_by_supplier\",\n  \"SqlName\": \"Exact values of one purchase\",\n  \"SqlText\": \"select T0.DocNum, T1.ItemCode, T1.Quantity, T1.Price, T1.LineTotal from OPCH T0 inner join PCH1 T1 on T0.DocEntry = T1.DocEntry where T0.CardCode = :cardCode\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"ParamList is cardCode\", () => pm.expect(pm.response.json().ParamList).to.eql(\"cardCode\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL values: exact row",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"cardCode='{{run}}X2'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "The purchase created in folder 08."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test(\"value[0].ItemCode is {{run}}XI\", () => pm.expect(pm.response.json().value[0].ItemCode).to.eql(pm.variables.replaceIn(\"{{run}}XI\")));",
+                  "pm.test(\"value[0].Quantity is 50\", () => pm.expect(pm.response.json().value[0].Quantity).to.eql(50));",
+                  "pm.test(\"value[0].Price is 5\", () => pm.expect(pm.response.json().value[0].Price).to.eql(5));",
+                  "pm.test(\"value[0].LineTotal is 250\", () => pm.expect(pm.response.json().value[0].LineTotal).to.eql(250));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Letters and aliases",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_alias\",\n  \"SqlName\": \"Letters and aliases\",\n  \"SqlText\": \"select t0.docnum as Num, COUNT(*) as Lines from opch t0 inner join pch1 t1 on t0.docentry = t1.docentry group by t0.docnum order by Num\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.150-151."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('names get their exact letters', () => { const t = pm.response.json().SqlText; pm.expect(t).to.match(/[\"\\[]DocNum[\"\\]]/); pm.expect(t).to.match(/[\"\\[]PCH1[\"\\]]/); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL aliases: the alias is the field name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1000"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')/List?$skip=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')/List"
+              ],
+              "query": [
+                {
+                  "key": "$skip",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('fields Num and Lines', () => pm.expect(Object.keys(pm.response.json().value[0]).sort()).to.eql(['Lines', 'Num']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A user-defined field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_region\",\n  \"SqlName\": \"A user-defined field\",\n  \"SqlText\": \"select CardCode, U_Region from OCRD where U_Region = :region and CardCode = :code\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "U_Region comes from folder 08. On real SAP it may need a restart of the Service Layer."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL UDF: reads the field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_region')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_region')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"region='Toshkent'&code='{{prefix}}001'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Two parameters, separated by & (guide p.153)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test(\"value[0].U_Region is Toshkent\", () => pm.expect(pm.response.json().value[0].U_Region).to.eql(\"Toshkent\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: select all",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select * from OPCH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.156."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 701', () => pm.expect(String(pm.response.json().error.code)).to.eql('701'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"update OPCH set Comments = '1234'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.157."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 701', () => pm.expect(String(pm.response.json().error.code)).to.eql('701'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"delete from PCH1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.157."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 701', () => pm.expect(String(pm.response.json().error.code)).to.eql('701'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: wrong grammar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select DocEntry from OPCH t1 order by DocEntry dsc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.154."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 701', () => pm.expect(String(pm.response.json().error.code)).to.eql('701'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: unknown function",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select \\\"ItemCode\\\", length(\\\"ItemCode\\\")as lenItemCode from oitm\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.155."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 701', () => pm.expect(String(pm.response.json().error.code)).to.eql('701'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: two equal aliases",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select max(ItemCode) as min_itemCode, min(ItemCode) as min_itemCode from OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.155."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 701', () => pm.expect(String(pm.response.json().error.code)).to.eql('701'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: table not on the list",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select CardCode from OCRD t1 where exists(select 1 from CRD2 t2 where t1.CardCode = t2.CardCode)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.154."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 702', () => pm.expect(String(pm.response.json().error.code)).to.eql('702'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: the users table",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select USER_CODE from OUSR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.146: OUSR is not on the list."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code 702', () => pm.expect(String(pm.response.json().error.code)).to.eql('702'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: no alias on a computed column",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select count(*) from OPCH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.156."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: unknown column",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select Nope from OPCH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mock: 703. Real SAP may answer differently."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: more than one statement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select DocEntry from OPCH; delete from OPCH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mock choice: 701."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select DocEntry from OPCH -- comment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mock choice: 701."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: system table",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select usename from pg_catalog.pg_user\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: sleep function",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select pg_sleep(10) as x from OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: cast",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlName\": \"bad\",\n  \"SqlText\": \"select DocEntry from OPCH where DocDate > '2026-01-01'::date\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: no text",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL refused: the same code twice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"purch_lines\",\n  \"SqlText\": \"SELECT T0.DocNum, T0.DocDate, T0.CardCode, T1.ItemCode, T1.Quantity, T1.Price FROM OPCH T0 INNER JOIN PCH1 T1 ON T0.DocEntry = T1.DocEntry\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL parameter: the attack of the guide",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"cardCode='x';truncate table OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.159-160."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code 704', () => pm.expect(String(pm.response.json().error.code)).to.eql('704'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL parameter: the attack by GET",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')/List?cardCode='x';truncate table OITM",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')/List"
+              ],
+              "query": [
+                {
+                  "key": "cardCode",
+                  "value": "'x';truncate table OITM"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL parameter: the table is still there",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items?$select=ItemCode&$top=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "ItemCode"
+                },
+                {
+                  "key": "$top",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL parameter: missing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL parameter: unknown name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"other='x'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL parameter: a date that is not a date",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"fromDate='not a date'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL parameter: quotes stay a value",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')/List"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ParamList\": \"cardCode='x'' or ''1''=''1'\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "If this were added to the text, every purchase would come back."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('0 rows', () => pm.expect(pm.response.json().value.length).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: read one",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')"
+              ]
+            },
+            "description": "Guide p.141."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"SqlCode is purch_lines\", () => pm.expect(pm.response.json().SqlCode).to.eql(\"purch_lines\"));",
+                  "pm.test(\"SqlName is Xaridlar qatorlari bilan\", () => pm.expect(pm.response.json().SqlName).to.eql(\"Xaridlar qatorlari bilan\"));",
+                  "pm.test(\"ParamList is fromDate\", () => pm.expect(pm.response.json().ParamList).to.eql(\"fromDate\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: list and filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries?$select=SqlCode&$filter=SqlCode eq 'purch_lines'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "SqlCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "SqlCode eq 'purch_lines'"
+                }
+              ]
+            },
+            "description": "Guide p.142."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: change the name",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlName\": \"Yangi nom\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.142."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: change the text",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlText\": \"select itemcode from oitm where itemcode = :code\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: the changes are saved",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"SqlName is Yangi nom\", () => pm.expect(pm.response.json().SqlName).to.eql(\"Yangi nom\"));",
+                  "pm.test(\"ParamList is code\", () => pm.expect(pm.response.json().ParamList).to.eql(\"code\"));",
+                  "pm.test('the new text is normalized', () => pm.expect(pm.response.json().SqlText).to.match(/[\"\\[]ItemCode[\"\\]]/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: new text is checked too",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlText\": \"delete from OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')"
+              ]
+            },
+            "description": "Guide p.142."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: removed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL CRUD: cannot run what is removed",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_alias')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_alias')/List"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as a normal user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CompanyDB\": \"{{CompanyDB}}\",\n  \"UserName\": \"{{normalUser}}\",\n  \"Password\": \"{{normalPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Real SAP: a user without the Service Layer SQL authorization (guide p.158)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('normalSession', pm.response.json().SessionId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL permission: a normal user may read",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION={{normalSession}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')"
+              ]
+            },
+            "description": "Guide p.159."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL permission: not run by GET",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION={{normalSession}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines_all')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines_all')/List"
+              ]
+            },
+            "description": "Guide p.157-158."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -6006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-6006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL permission: not run by POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION={{normalSession}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines_all')/List",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines_all')/List"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -6006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-6006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL permission: not create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION={{normalSession}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlCode\": \"pm_bad\",\n  \"SqlText\": \"SELECT T0.DocNum, T0.DocDate, T0.CardCode, T1.ItemCode, T1.Quantity, T1.Price FROM OPCH T0 INNER JOIN PCH1 T1 ON T0.DocEntry = T1.DocEntry\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.159."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -6006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-6006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL permission: not change",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION={{normalSession}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"SqlName\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -6006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-6006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL permission: not remove",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION={{normalSession}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -6006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-6006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL permission: nothing changed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"SqlName is Xaridlar qatorlari bilan\", () => pm.expect(pm.response.json().SqlName).to.eql(\"Xaridlar qatorlari bilan\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout the normal user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION={{normalSession}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Logout"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login again as the main user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CompanyDB\": \"{{CompanyDB}}\",\n  \"UserName\": \"{{UserName}}\",\n  \"Password\": \"{{Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "The cookie jar now holds the session of the normal user, which has ended."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('session fields', () => { pm.expect(body.SessionId).to.be.a('string'); pm.expect(body.Version).to.be.a('string'); pm.expect(body.SessionTimeout).to.be.a('number'); });",
+                  "const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value);",
+                  "pm.test('B1SESSION cookie', () => pm.expect(cookies.some(c => c.startsWith('B1SESSION=' + body.SessionId))).to.eql(true));",
+                  "pm.environment.set('B1SESSION', body.SessionId);",
+                  "const route = cookies.map(c => /ROUTEID=([^;]+)/.exec(c)).find(Boolean);",
+                  "pm.environment.set('ROUTEID', route ? route[1] : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL cleanup: remove purch_lines",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL cleanup: remove purch_lines_all",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('purch_lines_all')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('purch_lines_all')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL cleanup: remove pm_by_supplier",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_by_supplier')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_by_supplier')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SQL cleanup: remove pm_region",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/SQLQueries('pm_region')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "SQLQueries('pm_region')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "99 Cleanup and logout",
       "item": [
         {

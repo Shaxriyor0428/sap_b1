@@ -103,6 +103,30 @@ public static class SapErrors
     public static ServiceLayerException NumberOutOfRange() =>
         new(BadRequest, "-10", "A number is too large to be stored");
 
+    /// <summary>Code and format from guide p.154-157. Reasons taken from there are the guide's own words.</summary>
+    public static ServiceLayerException SqlSyntax(string sql, int position, string reason) =>
+        new(BadRequest, "701", $"Invalid SQL syntax:{sql}, line 1, character position {position}, {reason}");
+
+    /// <summary>Code from the guide. The reason is PostgreSQL's text, so it differs from real SAP.</summary>
+    public static ServiceLayerException SqlCannotRun(string reason) =>
+        new(BadRequest, "701", $"Invalid SQL syntax: {reason}");
+
+    /// <summary>Guide p.154.</summary>
+    public static ServiceLayerException SqlTableNotAccessible(string table) =>
+        new(BadRequest, "702", $"Table '{table}' not accessible");
+
+    /// <summary>Guide p.148, where it is about excluded columns. The mock also uses it for unknown ones.</summary>
+    public static ServiceLayerException SqlColumnNotAccessible(string column, string table) =>
+        new(BadRequest, "703", $"Column '{column}' from table '{table}' not accessible");
+
+    /// <summary>Guide p.160.</summary>
+    public static ServiceLayerException SqlParameterError() =>
+        new(BadRequest, "704", "Parameter error.");
+
+    /// <summary>Guide p.158.</summary>
+    public static ServiceLayerException NotPermitted() =>
+        new(Forbidden, "-6006", "You are not permitted to perform this action");
+
     public static ServiceLayerException InvalidUserFieldName(string name) =>
         new(BadRequest, "-10", $"'{name}' is not a valid field name: use letters, digits and underscores, starting with a letter");
 

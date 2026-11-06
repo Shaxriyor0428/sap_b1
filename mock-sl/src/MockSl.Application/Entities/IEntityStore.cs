@@ -1,4 +1,5 @@
 using MockSl.Application.OData;
+using MockSl.Application.SqlQueries;
 using MockSl.Domain.Metadata;
 
 namespace MockSl.Application.Entities;
@@ -17,6 +18,9 @@ public interface IEntityStore
 {
     /// <summary>Starts one transaction. One API request uses exactly one session.</summary>
     Task<IEntitySession> OpenSessionAsync(CancellationToken cancellationToken);
+
+    /// <summary>Runs checked SQL in its own read-only transaction, so it cannot change anything.</summary>
+    Task<IReadOnlyList<SqlRow>> RunReadOnlyQueryAsync(SqlRun run, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -94,6 +98,11 @@ public interface IEntitySession : IAsyncDisposable
         ChildDefinition child,
         object? parentKey,
         IReadOnlyList<FieldValue> values,
+        CancellationToken cancellationToken);
+
+    /// <summary>The real column names of these tables. SQL names are checked against them.</summary>
+    Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ReadTableColumnsAsync(
+        IEnumerable<string> tables,
         CancellationToken cancellationToken);
 
     /// <summary>Adds the column of a user-defined field. The rules have already validated both names.</summary>

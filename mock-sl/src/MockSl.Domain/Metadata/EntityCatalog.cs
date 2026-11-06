@@ -151,6 +151,22 @@ public static class EntityCatalog
         ],
         canDelete: false);
 
+    /// <summary>Saved SQL (guide p.140-142). Running it is the List function, see SqlQueryRunner.</summary>
+    public static readonly EntityDefinition SqlQueries = new(
+        setName: "SQLQueries",
+        typeName: "SQLQuery",
+        table: "OSQL",
+        keyFields: ["SqlCode"],
+        fields:
+        [
+            FieldDefinition.Text("SqlCode", maxLength: 254) with { IsRequired = true },
+            FieldDefinition.Text("SqlName", maxLength: 254),
+            new FieldDefinition { Name = "SqlText", Column = "SqlText", Type = FieldType.Text, IsRequired = true },
+            new FieldDefinition { Name = "ParamList", Column = "ParamList", Type = FieldType.Text, IsReadOnly = true },
+            FieldDefinition.Date("CreateDate") with { IsReadOnly = true },
+            FieldDefinition.Date("UpdateDate") with { IsReadOnly = true },
+        ]);
+
     private static readonly EntityDefinition[] BusinessObjects =
     [
         BusinessPartners,
@@ -164,7 +180,7 @@ public static class EntityCatalog
     ];
 
     private static readonly Dictionary<string, EntityDefinition> BySetName =
-        BusinessObjects.Append(UserFieldsMD).ToDictionary(entity => entity.SetName);
+        BusinessObjects.Append(UserFieldsMD).Append(SqlQueries).ToDictionary(entity => entity.SetName);
 
     /// <summary>
     /// The only tables a user-defined field can be added to. The name goes into DDL, where

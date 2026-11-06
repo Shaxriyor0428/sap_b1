@@ -31,6 +31,7 @@ public sealed class ServiceLayerErrorMiddleware(
     private static int ToStatusCode(ServiceLayerErrorKind kind) => kind switch
     {
         ServiceLayerErrorKind.Unauthorized => StatusCodes.Status401Unauthorized,
+        ServiceLayerErrorKind.Forbidden => StatusCodes.Status403Forbidden,
         ServiceLayerErrorKind.NotFound => StatusCodes.Status404NotFound,
         _ => StatusCodes.Status400BadRequest,
     };

@@ -14,6 +14,7 @@ public sealed class RulesCatalog(TimeProvider clock)
         [EntityCatalog.Items.SetName] = new ItemRules(),
         [EntityCatalog.ChartOfAccounts.SetName] = new AccountRules(),
         [EntityCatalog.UserFieldsMD.SetName] = new UserFieldRules(),
+        [EntityCatalog.SqlQueries.SetName] = new SqlQueryRules(clock),
         [EntityCatalog.Invoices.SetName] = new DocumentRules(EntityCatalog.Invoices, DocumentFlow.Sale, clock),
         [EntityCatalog.PurchaseInvoices.SetName] = new DocumentRules(EntityCatalog.PurchaseInvoices, DocumentFlow.Purchase, clock),
         [EntityCatalog.IncomingPayments.SetName] = new PaymentRules(EntityCatalog.IncomingPayments, PaymentFlow.Incoming, clock),

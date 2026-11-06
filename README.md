@@ -5,7 +5,7 @@ SAP Business One Service Layer'ning nusxasi (mock) va unga HTTP orqali ulanadiga
 - Reja: [`PLAN.md`](PLAN.md)
 - Service Layer shartnomasi va tushuntirishlar `docs/` papkasida. U private va git'da saqlanmaydi.
 
-> **Holat:** 4-bosqich: mock'da barcha obyektlar, biznes qoidalar, `$expand` va UDF, backend'da mijozlar va hudud bilan ishlash, oziq-ovqat do'koni skripti va SQL vazifalari tayyor. `SQLQueries` keyingi bosqichda qo'shiladi.
+> **Holat:** barcha bosqichlar tayyor: mock'da barcha obyektlar, biznes qoidalar, `$expand`, UDF va `SQLQueries`, backend'da mijozlar va hudud bilan ishlash, oziq-ovqat do'koni skripti va SQL vazifalari. Mock'da to'liq tekshirilgan, real SAP'da hali tekshirilmagan.
 
 ## Kerakli dasturlar
 
@@ -119,6 +119,27 @@ docker compose exec -T db psql -U sap_mock -d sap_mock < sql/01_sales_over_500.s
 
 Bazadagi qiymatlar Service Layer'dagidan farq qiladi: `CardType` bazada `'C'`, API'da `cCustomer`. So'rovlar HANA'ga mos yozilgan, lekin faqat PostgreSQL'da tekshirilgan.
 
+## SQLQueries
+
+Service Layer'da SQL oldin saqlanadi, keyin `List` bilan ishga tushiriladi. Xaridlar qatorlari bilan, sana parametri bilan:
+
+```http
+POST /b1s/v2/SQLQueries
+{"SqlCode":"purch_lines","SqlName":"Xaridlar qatorlari bilan","SqlText":"SELECT T0.DocNum, T0.DocDate, T0.CardCode, T1.ItemCode, T1.Quantity, T1.Price FROM OPCH T0 INNER JOIN PCH1 T1 ON T0.DocEntry = T1.DocEntry WHERE T0.DocDate >= :fromDate"}
+
+POST /b1s/v2/SQLQueries('purch_lines')/List
+{"ParamList":"fromDate='2026-10-01'"}
+
+GET /b1s/v2/SQLQueries('purch_lines')/List?fromDate='2026-10-01'
+```
+
+Sanasiz variant xuddi shu matn, `WHERE`siz. Ikkalasi Postman'ning `09 SQLQueries` papkasida.
+
+- Faqat `SELECT` va ruxsat etilgan jadvallar: `OCRD`, `OINV`, `INV1`, `INV6`, `OPCH`, `PCH1`, `ORCT`, `RCT2`, `OVPM`, `VPM2`, `OITM`, `OITW`, `OACP`.
+- Nomlar qo'shtirnoqsiz yoziladi, mock ularni aniq nomlarga moslaydi. Parametr qiymati SQL matniga qo'shilmaydi.
+- `manager` hammasini qiladi. `user1` faqat o'qiy oladi: `List` va o'zgartirish 403 / -6006.
+- Xatolar: 701 sintaksis, 702 jadval, 703 ustun, 704 parametr.
+
 ## Backend API
 
 | So'rov | Vazifasi |
@@ -173,6 +194,15 @@ docker compose up --build api
 
 `SL_SKIP_TLS_VERIFY=true` self-signed sertifikat uchun kerak, faqat test muhitida ishlating.
 
+Real test bazasida tekshirish tartibi:
+
+1. Postman'da `real-sap` environment'ni to'ldiring, to'plamni ishga tushiring.
+2. Backend'ni yuqoridagidek ishga tushirib, `05 Backend API`ni tekshiring.
+3. Do'kon skripti: `.env`ga `SL_USERNAME`, `SL_PASSWORD`, `SL_WAREHOUSE`, `SL_TAX_CODE` yoki `SL_VAT_GROUP`, `GROCERY_CASH_PARENT_ACCOUNT`, `GROCERY_CURRENT_MONTH`ni yozib, `docker compose run --rm --build grocery-store`.
+4. `sql/` fayllarini Query Manager'da, `09 SQLQueries`dagi `SqlText`ni Service Layer'da ishga tushiring.
+
+To'plam va skript test bazasiga yozadi, ishchi bazada ishlatmang.
+
 ## Postman
 
 `postman/` papkasidagi to'plam va environment'larni Postman'ga import qiling (File -> Import) va to'plamni tartib bilan ishga tushiring.
@@ -180,7 +210,7 @@ docker compose up --build api
 | Environment | Vazifasi |
 |---|---|
 | `mock` | Lokal mock uchun, tayyor |
-| `real-sap` | Real SAP uchun: `baseUrl`, `CompanyDB`, `UserName`, `Password` to'ldiriladi. Self-signed sertifikat tufayli Postman'da SSL tekshiruvini o'chiring. `05 Backend API` papkasi uchun backend ilova ham real SAP sozlamalari bilan ishlab turishi kerak |
+| `real-sap` | Real SAP uchun: `baseUrl`, `CompanyDB`, `UserName`, `Password`, `normalUser`, `normalPassword` (SQL ruxsati yo'q foydalanuvchi), `parentAccount` (sarlavha hisobi) to'ldiriladi. Self-signed sertifikat tufayli Postman'da SSL tekshiruvini o'chiring. `05 Backend API` papkasi uchun backend ilova ham real SAP sozlamalari bilan ishlab turishi kerak |
 
 Buyruq qatoridan:
 
@@ -193,6 +223,8 @@ Testlar o'z ma'lumotlarini `PM` va `PD` prefikslari bilan yaratadi. `PM` ma'lumo
 Mock environment'ida hisob-kitoblar soliqsiz. Real SAP'da soliq bor bo'lsa, `07 Documents and payments` papkasidagi aniq summalar farq qilishi mumkin.
 
 `08 Expand and UDF` papkasi `U_Region`ni yaratadi va u bazada qoladi. Sinov maydonlarini esa o'zi o'chiradi. Real SAP'da yangi maydon Service Layer qayta ishga tushmaguncha ko'rinmasligi mumkin, bunda birinchi ishga tushirishda shu papkaning maydonni yozadigan so'rovlari tushadi. `IncomingPayments` uchun `$expand` real SAP'da rad etilishi mumkin: bu hujjat talabi, EDMX'da esa bunday bog'lanish yo'q.
+
+`09 SQLQueries` papkasi saqlagan so'rovlarini oxirida o'chiradi. U `08` papkadagi xaridga tayanadi, shuning uchun to'plamni tartib bilan ishga tushiring.
 
 SQL vazifalari faqat do'kon ma'lumotlariga mo'ljallangan, shuning uchun ulardan oldin bazani tozalab, faqat do'kon skriptini ishga tushiring.
 

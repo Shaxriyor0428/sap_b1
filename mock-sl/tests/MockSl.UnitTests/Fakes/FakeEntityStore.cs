@@ -1,4 +1,5 @@
 using MockSl.Application.Entities;
+using MockSl.Application.SqlQueries;
 using MockSl.Domain.Metadata;
 
 namespace MockSl.UnitTests.Fakes;
@@ -9,6 +10,12 @@ internal sealed class FakeEntityStore : IEntityStore, IEntitySession
     public List<EntityRow> Rows { get; init; } = [];
 
     public List<EntityRow> LinkedRows { get; init; } = [];
+
+    public List<SqlRow> SqlRows { get; init; } = [];
+
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> TableColumns { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
+    public SqlRun? LastRun { get; private set; }
 
     public EntityRow? InsertedRow { get; init; }
 
@@ -36,6 +43,17 @@ internal sealed class FakeEntityStore : IEntityStore, IEntitySession
         SessionOpened = true;
         return Task.FromResult<IEntitySession>(this);
     }
+
+    public Task<IReadOnlyList<SqlRow>> RunReadOnlyQueryAsync(SqlRun run, CancellationToken cancellationToken)
+    {
+        LastRun = run;
+        return Task.FromResult<IReadOnlyList<SqlRow>>(SqlRows);
+    }
+
+    public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ReadTableColumnsAsync(
+        IEnumerable<string> tables,
+        CancellationToken cancellationToken) =>
+        Task.FromResult(TableColumns);
 
     public Task<IReadOnlyList<EntityRow>> QueryAsync(EntityDefinition entity, EntityQuery query, CancellationToken cancellationToken)
     {

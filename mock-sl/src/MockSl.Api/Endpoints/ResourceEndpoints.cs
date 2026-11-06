@@ -1,7 +1,9 @@
 using System.Text.Json.Nodes;
 using MockSl.Api.Http;
+using MockSl.Application.Auth;
 using MockSl.Application.Entities;
 using MockSl.Application.OData;
+using MockSl.Application.SqlQueries;
 using MockSl.Domain.Errors;
 using MockSl.Domain.Metadata;
 
@@ -23,6 +25,8 @@ public static class ResourceEndpoints
         string? resource,
         HttpContext http,
         EntityHandler handler,
+        AuthService auth,
+        SqlQueryRunner sqlQueries,
         CancellationToken cancellationToken)
     {
         var path = ResourcePath.Parse(resource ?? string.Empty);
@@ -30,6 +34,16 @@ public static class ResourceEndpoints
         var entity = await handler.WithUserFieldsAsync(definition, cancellationToken);
 
         var key = path.Key is null ? null : EntityKey.Bind(entity, path.Key);
+
+        if (definition == EntityCatalog.SqlQueries)
+        {
+            SqlQueryEndpoints.EnsurePermitted(http, auth, path);
+
+            if (SqlQueryEndpoints.IsList(path))
+            {
+                return await SqlQueryEndpoints.ListAsync(key, http, sqlQueries, cancellationToken);
+            }
+        }
 
         if (path.Action is { } action)
         {

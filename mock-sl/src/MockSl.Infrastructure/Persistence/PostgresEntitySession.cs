@@ -114,6 +114,25 @@ public sealed class PostgresEntitySession(NpgsqlConnection connection, NpgsqlTra
         CancellationToken cancellationToken) =>
         ExecuteWriteAsync(ChildSqlBuilder.UpdateAll(child, parentKey, values), cancellationToken);
 
+    public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ReadTableColumnsAsync(
+        IEnumerable<string> tables,
+        CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT table_name::text AS "Table", column_name::text AS "Column"
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name::text = ANY(@Tables)
+            ORDER BY table_name, ordinal_position
+            """;
+
+        var command = new CommandDefinition(sql, new { Tables = tables.ToArray() }, transaction, cancellationToken: cancellationToken);
+        var rows = await connection.QueryAsync<(string Table, string Column)>(command);
+
+        return rows
+            .GroupBy(row => row.Table)
+            .ToDictionary(group => group.Key, IReadOnlyList<string> (group) => group.Select(row => row.Column).ToList());
+    }
+
     public async Task AddColumnAsync(string table, FieldDefinition column, CancellationToken cancellationToken)
     {
         try
