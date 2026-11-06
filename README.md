@@ -5,7 +5,7 @@ SAP Business One Service Layer'ning nusxasi (mock) va unga HTTP orqali ulanadiga
 - Reja: [`PLAN.md`](PLAN.md)
 - Service Layer shartnomasi va tushuntirishlar `docs/` papkasida. U private va git'da saqlanmaydi.
 
-> **Holat:** 3-bosqich: mock'da barcha obyektlar, biznes qoidalar, `$expand` va UDF, backend'da mijozlar va hudud bilan ishlash, oziq-ovqat do'koni skripti tayyor. SQL vazifalar va SQLQueries keyingi bosqichlarda qo'shiladi.
+> **Holat:** 4-bosqich: mock'da barcha obyektlar, biznes qoidalar, `$expand` va UDF, backend'da mijozlar va hudud bilan ishlash, oziq-ovqat do'koni skripti va SQL vazifalari tayyor. `SQLQueries` keyingi bosqichda qo'shiladi.
 
 ## Kerakli dasturlar
 
@@ -88,6 +88,36 @@ Hammasi mos kelsa, `ACCEPTED` chiqadi va chiqish kodi 0 bo'ladi. Farq bo'lsa 1, 
 Kodlar takrorlanmasligi kerak, shuning uchun ikkinchi marta ishga tushirish uchun bazani tozalang yoki `.env`da `GROCERY_PREFIX`ni o'zgartiring.
 
 Real SAP'da ishga tushirish uchun `.env`da `SL_USERNAME`, `SL_PASSWORD`, `SL_WAREHOUSE`, `SL_TAX_CODE` yoki `SL_VAT_GROUP`, `GROCERY_CASH_PARENT_ACCOUNT` va `GROCERY_CURRENT_MONTH`ni ham to'ldiring: `.env.example`ga qarang.
+
+## SQL vazifalari
+
+`sql/` papkasida 14 ta fayl. Har faylning boshida vazifa matni va do'kon ma'lumotidagi kutilgan natija bor. Ular faqat do'kon ma'lumotiga mo'ljallangan: Postman qoldirgan hujjatlar natijani buzadi, shuning uchun bazani avval tozalang.
+
+```bash
+docker compose down -v
+docker compose up --build -d
+docker compose run --rm --build grocery-store
+bash sql/check.sh
+```
+
+`check.sh` 1-13-fayllarni mock bazasida ishga tushirib, natijani fayl boshidagi `-- > ` qatorlari bilan solishtiradi. Bitta faylni ishga tushirish:
+
+```bash
+docker compose exec -T db psql -U sap_mock -d sap_mock < sql/01_sales_over_500.sql
+```
+
+| Fayl | Vazifa |
+|---|---|
+| `01`, `02` | 500 dan katta sotuvlar, mijoz ismi bilan |
+| `03`, `04`, `05` | Shu oydagi sotuvlar, kelgan pul, sotuvlar soni |
+| `06` | Sotuvlar va mollar |
+| `07`, `08`, `09` | Eng qimmat mol, eng qimmat 10 ta mol, mijoz ismi bilan |
+| `10`, `11` | Eng ko'p marta xarid qilgan va eng ko'p pul sarflagan 10 ta mijoz |
+| `12` | Xaridlar va qatorlar |
+| `13` | Birorta ham sotuvi bo'lmagan mijozlar (`LEFT JOIN`) |
+| `14` | 3-5-vazifalar `[%0]` va `[%1]` bilan. Mock'da ishlamaydi, SAP B1 Query Manager uchun |
+
+Bazadagi qiymatlar Service Layer'dagidan farq qiladi: `CardType` bazada `'C'`, API'da `cCustomer`. So'rovlar HANA'ga mos yozilgan, lekin faqat PostgreSQL'da tekshirilgan.
 
 ## Backend API
 
