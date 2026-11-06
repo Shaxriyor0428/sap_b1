@@ -18,4 +18,8 @@
   <Folder Name="/mock-sl/tests/">
     <Project Path="mock-sl/tests/MockSl.UnitTests/MockSl.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/GroceryStore.UnitTests/GroceryStore.UnitTests.csproj" />
+    <Project Path="tools/GroceryStore/GroceryStore.csproj" />
+  </Folder>
 </Solution>

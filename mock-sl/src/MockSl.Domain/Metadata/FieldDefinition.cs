@@ -19,13 +19,22 @@ public sealed record FieldDefinition
     /// <summary>Read-only fields are silently ignored in request bodies (guide p.27).</summary>
     public bool IsReadOnly { get; init; }
 
+    /// <summary>Can be set when the object is created, then behaves as read-only.</summary>
+    public bool IsCreateOnly { get; init; }
+
     public bool IsRequired { get; init; }
 
     public static FieldDefinition Text(string name, int maxLength, string? column = null) =>
         new() { Name = name, Column = column ?? name, Type = FieldType.Text, MaxLength = maxLength };
 
+    public static FieldDefinition Integer(string name, string? column = null) =>
+        new() { Name = name, Column = column ?? name, Type = FieldType.Integer };
+
     public static FieldDefinition Decimal(string name, string? column = null) =>
         new() { Name = name, Column = column ?? name, Type = FieldType.Decimal };
+
+    public static FieldDefinition Date(string name, string? column = null) =>
+        new() { Name = name, Column = column ?? name, Type = FieldType.Date };
 
     public static FieldDefinition Enumeration(string name, EnumMap map, string? column = null) =>
         new() { Name = name, Column = column ?? name, Type = FieldType.Enumeration, Enum = map };

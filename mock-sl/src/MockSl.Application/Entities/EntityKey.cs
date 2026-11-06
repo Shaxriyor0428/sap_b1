@@ -7,6 +7,10 @@ namespace MockSl.Application.Entities;
 
 public static class EntityKey
 {
+    /// <summary>The key of an object with one key field, for the rules that look up related objects.</summary>
+    public static IReadOnlyList<FieldValue> Of(EntityDefinition entity, object value) =>
+        [new FieldValue(entity.Key[0], value)];
+
     /// <summary>Matches URL key parts to the key fields of the object and converts their values.</summary>
     public static IReadOnlyList<FieldValue> Bind(EntityDefinition entity, IReadOnlyList<KeyPart> parts)
     {
@@ -34,7 +38,7 @@ public static class EntityKey
     }
 
     /// <summary>Writes the key part of a URL from a stored row: ('C0001'), or (A='x',B=1) for several fields.</summary>
-    public static string Format(EntityDefinition entity, IReadOnlyDictionary<string, object?> row)
+    public static string Format(EntityDefinition entity, EntityRow row)
     {
         if (entity.Key.Count == 1)
         {

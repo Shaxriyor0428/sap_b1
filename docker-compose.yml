@@ -45,5 +45,24 @@ services:
     ports:
       - "${API_HOST_PORT:-8080}:8080"
 
+  # Runs once and exits, only when asked for: docker compose run --rm --build grocery-store
+  grocery-store:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: tools/GroceryStore/Dockerfile
+    environment:
+      SL_BASE_URL: ${SL_BASE_URL:-http://mock-sl:8080/b1s/v2/}
+      SL_COMPANY_DB: ${SL_COMPANY_DB:-TEST}
+      SL_SKIP_TLS_VERIFY: ${SL_SKIP_TLS_VERIFY:-false}
+      SL_USERNAME: ${SL_USERNAME:-manager}
+      SL_PASSWORD: ${SL_PASSWORD:-1234}
+      SL_WAREHOUSE: ${SL_WAREHOUSE:-01}
+      SL_TAX_CODE: ${SL_TAX_CODE:-}
+      SL_VAT_GROUP: ${SL_VAT_GROUP:-}
+      GROCERY_PREFIX: ${GROCERY_PREFIX:-G}
+      GROCERY_CURRENT_MONTH: ${GROCERY_CURRENT_MONTH:-2026-11}
+      GROCERY_CASH_PARENT_ACCOUNT: ${GROCERY_CASH_PARENT_ACCOUNT:-1000}
+
 volumes:
   db-data:

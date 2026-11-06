@@ -9,6 +9,7 @@ public sealed record OrderByItem(FieldDefinition Field, bool Descending);
 /// <summary>The query options of a request, validated against the object definition.</summary>
 public sealed record ODataQuery(
     IReadOnlyList<FieldDefinition> Select,
+    IReadOnlyList<ChildDefinition> Children,
     FilterNode? Filter,
     IReadOnlyList<OrderByItem> OrderBy,
     int? Top,
@@ -26,24 +27,42 @@ public sealed record ODataQuery(
             }
         }
 
+        var (select, children) = ParseSelect(entity, options.GetValueOrDefault("$select"));
+
         return new ODataQuery(
-            ParseSelect(entity, options.GetValueOrDefault("$select")),
+            select,
+            children,
             options.TryGetValue("$filter", out var filter) ? FilterParser.Parse(entity, filter) : null,
             ParseOrderBy(entity, options.GetValueOrDefault("$orderby")),
             options.TryGetValue("$top", out var top) ? ParseCount("$top", top) : null,
             options.TryGetValue("$skip", out var skip) ? ParseCount("$skip", skip) : 0);
     }
 
-    private static IReadOnlyList<FieldDefinition> ParseSelect(EntityDefinition entity, string? select)
+    private static (IReadOnlyList<FieldDefinition> Fields, IReadOnlyList<ChildDefinition> Children) ParseSelect(
+        EntityDefinition entity,
+        string? select)
     {
         if (string.IsNullOrWhiteSpace(select) || select.Trim() == "*")
         {
-            return entity.Fields;
+            return (entity.Fields, entity.Children);
         }
 
-        return SplitList(select)
-            .Select(name => entity.FindField(name) ?? throw SapErrors.InvalidProperty(entity.TypeName, name))
-            .ToList();
+        var fields = new List<FieldDefinition>();
+        var children = new List<ChildDefinition>();
+
+        foreach (var name in SplitList(select))
+        {
+            if (entity.FindChild(name) is { } child)
+            {
+                children.Add(child);
+            }
+            else
+            {
+                fields.Add(entity.FindField(name) ?? throw SapErrors.InvalidProperty(entity.TypeName, name));
+            }
+        }
+
+        return (fields, children);
     }
 
     private static IReadOnlyList<OrderByItem> ParseOrderBy(EntityDefinition entity, string? orderBy)

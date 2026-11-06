@@ -8,6 +8,7 @@ namespace MockSl.UnitTests.Entities;
 public class EntityBodyReaderTests
 {
     private static readonly EntityDefinition Entity = EntityCatalog.BusinessPartners;
+    private static readonly EntityDefinition Invoices = EntityCatalog.Invoices;
 
     private static JsonElement Json(string text) => JsonDocument.Parse(text).RootElement;
 
@@ -19,9 +20,9 @@ public class EntityBodyReaderTests
     [InlineData("C")]
     public void Enum_is_stored_as_its_database_value(string cardType)
     {
-        var values = EntityBodyReader.ReadForCreate(Entity, Json($$"""{"CardCode":"c1","CardType":"{{cardType}}"}"""));
+        var draft = EntityBodyReader.ReadForCreate(Entity, Json($$"""{"CardCode":"c1","CardType":"{{cardType}}"}"""));
 
-        Assert.Equal("C", ValueOf(values, "CardType"));
+        Assert.Equal("C", ValueOf(draft.Header.Values, "CardType"));
     }
 
     [Fact]
@@ -61,9 +62,9 @@ public class EntityBodyReaderTests
     [Fact]
     public void Read_only_field_is_ignored_silently()
     {
-        var values = EntityBodyReader.ReadForCreate(Entity, Json("""{"CardCode":"c1","CurrentAccountBalance":999}"""));
+        var draft = EntityBodyReader.ReadForCreate(Entity, Json("""{"CardCode":"c1","CurrentAccountBalance":999}"""));
 
-        Assert.DoesNotContain(values, value => value.Field.Name == "CurrentAccountBalance");
+        Assert.DoesNotContain(draft.Header.Values, value => value.Field.Name == "CurrentAccountBalance");
     }
 
     [Fact]
@@ -71,8 +72,8 @@ public class EntityBodyReaderTests
     {
         var body = Json("""{"CardCode":"c2","CardName":"x"}""");
 
-        Assert.DoesNotContain(EntityBodyReader.ReadForUpdate(Entity, body), value => value.Field.Name == "CardCode");
-        Assert.Contains(EntityBodyReader.ReadForCreate(Entity, body), value => value.Field.Name == "CardCode");
+        Assert.DoesNotContain(EntityBodyReader.ReadForUpdate(Entity, body).Values, value => value.Field.Name == "CardCode");
+        Assert.Contains(EntityBodyReader.ReadForCreate(Entity, body).Header.Values, value => value.Field.Name == "CardCode");
     }
 
     [Fact]
@@ -98,25 +99,25 @@ public class EntityBodyReaderTests
     [Fact]
     public void Null_clears_an_optional_field()
     {
-        var values = EntityBodyReader.ReadForUpdate(Entity, Json("""{"Phone1":null}"""));
+        var changes = EntityBodyReader.ReadForUpdate(Entity, Json("""{"Phone1":null}"""));
 
-        Assert.Null(ValueOf(values, "Phone1"));
+        Assert.Null(ValueOf(changes.Values, "Phone1"));
     }
 
     [Fact]
     public void Repeated_property_keeps_only_the_last_value()
     {
-        var values = EntityBodyReader.ReadForUpdate(Entity, Json("""{"CardName":"first","CardName":"last"}"""));
+        var changes = EntityBodyReader.ReadForUpdate(Entity, Json("""{"CardName":"first","CardName":"last"}"""));
 
-        Assert.Equal("last", Assert.Single(values).Value);
+        Assert.Equal("last", Assert.Single(changes.Values).Value);
     }
 
     [Fact]
     public void Odata_annotations_are_skipped()
     {
-        var values = EntityBodyReader.ReadForUpdate(Entity, Json("""{"@odata.context":"x","CardName":"n"}"""));
+        var changes = EntityBodyReader.ReadForUpdate(Entity, Json("""{"@odata.context":"x","CardName":"n"}"""));
 
-        Assert.Equal("CardName", Assert.Single(values).Field.Name);
+        Assert.Equal("CardName", Assert.Single(changes.Values).Field.Name);
     }
 
     [Theory]
@@ -127,5 +128,125 @@ public class EntityBodyReaderTests
         var error = Assert.Throws<ServiceLayerException>(() => EntityBodyReader.ReadForUpdate(Entity, Json(body)));
 
         Assert.Equal("The request body is not a valid JSON object", error.Message);
+    }
+
+    [Fact]
+    public void Document_lines_become_rows_with_database_columns()
+    {
+        var draft = EntityBodyReader.ReadForCreate(Invoices, Json("""
+            {"CardCode":"c1","DocDate":"2026-11-01","DocumentLines":[
+              {"ItemCode":"i1","Quantity":2,"UnitPrice":100,"WarehouseCode":"01"},
+              {"ItemCode":"i2","Quantity":"3","Price":50}
+            ]}
+            """));
+
+        var lines = draft.Rows(Invoices.Child("DocumentLines"));
+
+        Assert.Equal(2, lines.Count);
+        Assert.Equal("i1", lines[0].Text("ItemCode"));
+        Assert.Equal(100m, lines[0].Decimal("Price"));
+        Assert.Equal("01", lines[0].Text("WhsCode"));
+        Assert.Equal(3m, lines[1].Decimal("Quantity"));
+        Assert.Equal(new DateOnly(2026, 11, 1), draft.Header.Date("DocDate"));
+    }
+
+    [Fact]
+    public void Price_and_unit_price_share_one_column_and_the_last_wins()
+    {
+        var draft = EntityBodyReader.ReadForCreate(Invoices, Json("""
+            {"CardCode":"c1","DocumentLines":[{"ItemCode":"i1","Quantity":1,"Price":10,"UnitPrice":20}]}
+            """));
+
+        var line = Assert.Single(draft.Rows(Invoices.Child("DocumentLines")));
+
+        Assert.Equal(20m, line.Decimal("Price"));
+        Assert.Single(line.Values, value => value.Field.Column == "Price");
+    }
+
+    [Fact]
+    public void Totals_sent_by_the_client_are_ignored()
+    {
+        var draft = EntityBodyReader.ReadForCreate(Invoices, Json("""
+            {"CardCode":"c1","DocTotal":1,"PaidToDate":1,"DocumentStatus":"bost_Close","Cancelled":"tYES",
+             "DocumentLines":[{"ItemCode":"i1","Quantity":1,"Price":10,"LineTotal":1,"LineNum":7}]}
+            """));
+
+        Assert.Equal("CardCode", Assert.Single(draft.Header.Values).Field.Name);
+        var line = Assert.Single(draft.Rows(Invoices.Child("DocumentLines")));
+        Assert.Null(line.Get("LineTotal"));
+        Assert.Null(line.Get("LineNum"));
+    }
+
+    [Theory]
+    [InlineData("""{"CardCode":"c1","DocumentLines":[{"Quantity":1}]}""", "ItemCode")]
+    [InlineData("""{"CardCode":"c1","DocumentLines":[{"ItemCode":"i1"}]}""", "Quantity")]
+    public void Required_line_field_is_rejected_by_name(string body, string field)
+    {
+        var error = Assert.Throws<ServiceLayerException>(() => EntityBodyReader.ReadForCreate(Invoices, Json(body)));
+
+        Assert.Contains($"'{field}'", error.Message);
+        Assert.Contains("'DocumentLine'", error.Message);
+    }
+
+    [Fact]
+    public void Unknown_line_field_is_rejected()
+    {
+        var error = Assert.Throws<ServiceLayerException>(() => EntityBodyReader.ReadForCreate(
+            Invoices,
+            Json("""{"CardCode":"c1","DocumentLines":[{"ItemCode":"i1","Quantity":1,"Foo":1}]}""")));
+
+        Assert.Contains("'Foo'", error.Message);
+    }
+
+    [Fact]
+    public void Lines_must_be_an_array()
+    {
+        Assert.Throws<ServiceLayerException>(() =>
+            EntityBodyReader.ReadForCreate(Invoices, Json("""{"CardCode":"c1","DocumentLines":{}}""")));
+    }
+
+    [Fact]
+    public void Purchase_invoices_have_no_installments_collection()
+    {
+        var error = Assert.Throws<ServiceLayerException>(() => EntityBodyReader.ReadForCreate(
+            EntityCatalog.PurchaseInvoices,
+            Json("""{"CardCode":"s1","DocumentInstallments":[]}""")));
+
+        Assert.Contains("DocumentInstallments", error.Message);
+    }
+
+    [Fact]
+    public void Stock_cannot_be_written_directly_on_an_item()
+    {
+        var draft = EntityBodyReader.ReadForCreate(EntityCatalog.Items, Json("""
+            {"ItemCode":"i1","QuantityOnStock":999,"ItemWarehouseInfoCollection":[{"WarehouseCode":"01","InStock":999}]}
+            """));
+
+        Assert.Equal("ItemCode", Assert.Single(draft.Header.Values).Field.Name);
+        Assert.Empty(draft.ChildrenWithRows);
+    }
+
+    [Fact]
+    public void On_update_a_document_only_changes_what_is_not_fixed_at_creation()
+    {
+        var changes = EntityBodyReader.ReadForUpdate(Invoices, Json("""
+            {"CardCode":"other","DocDate":"2026-01-01","DocTotal":1,"DocumentLines":[],"Comments":"note"}
+            """));
+
+        Assert.Equal("Comments", Assert.Single(changes.Values).Field.Name);
+    }
+
+    [Fact]
+    public void Payment_row_points_to_the_invoice_through_its_own_doc_entry()
+    {
+        var entity = EntityCatalog.IncomingPayments;
+        var draft = EntityBodyReader.ReadForCreate(entity, Json("""
+            {"CardCode":"c1","CashSum":100,"PaymentInvoices":[{"DocEntry":5,"SumApplied":100,"InvoiceType":"it_Invoice"}]}
+            """));
+
+        var row = Assert.Single(draft.Rows(entity.Child("PaymentInvoices")));
+
+        Assert.Equal(5, row.Int("DocEntry"));
+        Assert.Equal("13", row.Text("InvType"));
     }
 }

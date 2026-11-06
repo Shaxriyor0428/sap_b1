@@ -8,33 +8,10 @@ namespace MockSl.Application.Entities;
 /// <summary>Validates a JSON request body against the object definition and converts it to database values.</summary>
 public static class EntityBodyReader
 {
-    public static IReadOnlyList<FieldValue> ReadForCreate(EntityDefinition entity, JsonElement body)
+    public static EntityDraft ReadForCreate(EntityDefinition entity, JsonElement body)
     {
-        var values = Read(entity, body, isCreate: true);
-
-        foreach (var field in entity.Fields.Where(field => field.IsRequired))
-        {
-            var value = values.FirstOrDefault(candidate => candidate.Field == field)?.Value;
-            if (value is null or "")
-            {
-                throw SapErrors.RequiredProperty(entity.TypeName, field.Name);
-            }
-        }
-
-        return values;
-    }
-
-    public static IReadOnlyList<FieldValue> ReadForUpdate(EntityDefinition entity, JsonElement body) =>
-        Read(entity, body, isCreate: false);
-
-    private static List<FieldValue> Read(EntityDefinition entity, JsonElement body, bool isCreate)
-    {
-        if (body.ValueKind != JsonValueKind.Object)
-        {
-            throw SapErrors.InvalidRequestBody();
-        }
-
-        var values = new List<FieldValue>();
+        EnsureObject(body);
+        var draft = new EntityDraft();
 
         foreach (var property in body.EnumerateObject())
         {
@@ -44,25 +21,110 @@ public static class EntityBodyReader
                 continue;
             }
 
+            if (entity.FindChild(property.Name) is { } child)
+            {
+                if (!child.IsReadOnly)
+                {
+                    draft.SetRows(child, ReadChildRows(child, property.Value));
+                }
+
+                continue;
+            }
+
             var field = entity.FindField(property.Name)
                 ?? throw SapErrors.InvalidProperty(entity.TypeName, property.Name);
 
-            // Guide p.27: read-only properties, such as the key on update, are ignored silently.
-            if (field.IsReadOnly || (!isCreate && entity.Key.Contains(field)))
+            // Guide p.27: read-only properties are ignored silently.
+            if (!field.IsReadOnly)
+            {
+                draft.Header.Set(field, Convert(entity.TypeName, field, property.Value));
+            }
+        }
+
+        EnsureRequired(entity.TypeName, entity.Fields, draft.Header);
+        return draft;
+    }
+
+    public static DraftRow ReadForUpdate(EntityDefinition entity, JsonElement body)
+    {
+        EnsureObject(body);
+        var changes = new DraftRow();
+
+        foreach (var property in body.EnumerateObject())
+        {
+            // Collections are fixed once a document exists, so they count as read-only here.
+            if (property.Name.StartsWith('@') || entity.FindChild(property.Name) is not null)
             {
                 continue;
             }
 
-            // JSON allows a repeated name. The last one wins, as in a normal JSON object,
-            // because the same column cannot appear twice in an INSERT or UPDATE.
-            values.RemoveAll(value => value.Field == field);
-            values.Add(new FieldValue(field, Convert(entity, field, property.Value)));
+            var field = entity.FindField(property.Name)
+                ?? throw SapErrors.InvalidProperty(entity.TypeName, property.Name);
+
+            if (!field.IsReadOnly && !field.IsCreateOnly && !entity.Key.Contains(field))
+            {
+                changes.Set(field, Convert(entity.TypeName, field, property.Value));
+            }
         }
 
-        return values;
+        return changes;
     }
 
-    private static object? Convert(EntityDefinition entity, FieldDefinition field, JsonElement json)
+    private static List<DraftRow> ReadChildRows(ChildDefinition child, JsonElement json)
+    {
+        if (json.ValueKind == JsonValueKind.Null)
+        {
+            return [];
+        }
+
+        if (json.ValueKind != JsonValueKind.Array)
+        {
+            throw SapErrors.InvalidValue(child.Name, json.GetRawText());
+        }
+
+        return json.EnumerateArray().Select(element => ReadChildRow(child, element)).ToList();
+    }
+
+    private static DraftRow ReadChildRow(ChildDefinition child, JsonElement json)
+    {
+        EnsureObject(json);
+        var row = new DraftRow();
+
+        foreach (var property in json.EnumerateObject())
+        {
+            var field = child.FindField(property.Name)
+                ?? throw SapErrors.InvalidProperty(child.TypeName, property.Name);
+
+            if (!field.IsReadOnly)
+            {
+                row.Set(field, Convert(child.TypeName, field, property.Value));
+            }
+        }
+
+        EnsureRequired(child.TypeName, child.Fields, row);
+        return row;
+    }
+
+    private static void EnsureObject(JsonElement json)
+    {
+        if (json.ValueKind != JsonValueKind.Object)
+        {
+            throw SapErrors.InvalidRequestBody();
+        }
+    }
+
+    private static void EnsureRequired(string typeName, IEnumerable<FieldDefinition> fields, DraftRow row)
+    {
+        foreach (var field in fields.Where(field => field.IsRequired))
+        {
+            if (row.Get(field.Column) is null or "")
+            {
+                throw SapErrors.RequiredProperty(typeName, field.Name);
+            }
+        }
+    }
+
+    private static object? Convert(string typeName, FieldDefinition field, JsonElement json)
     {
         if (json.ValueKind == JsonValueKind.Null)
         {
@@ -71,7 +133,7 @@ public static class EntityBodyReader
 
         return field.Type switch
         {
-            FieldType.Text => ReadText(entity, field, json),
+            FieldType.Text => ReadText(typeName, field, json),
             FieldType.Enumeration => LiteralConverter.ToEnumDbValue(field, ReadString(field, json)),
             FieldType.Date => LiteralConverter.ToDate(field, ReadString(field, json)),
             FieldType.Integer => LiteralConverter.ToInteger(field, ReadNumberText(field, json)),
@@ -80,11 +142,11 @@ public static class EntityBodyReader
         };
     }
 
-    private static string ReadText(EntityDefinition entity, FieldDefinition field, JsonElement json)
+    private static string ReadText(string typeName, FieldDefinition field, JsonElement json)
     {
         var text = ReadString(field, json);
         return field.MaxLength is { } maxLength && text.Length > maxLength
-            ? throw SapErrors.ValueTooLong(entity.TypeName, field.Name)
+            ? throw SapErrors.ValueTooLong(typeName, field.Name)
             : text;
     }
 

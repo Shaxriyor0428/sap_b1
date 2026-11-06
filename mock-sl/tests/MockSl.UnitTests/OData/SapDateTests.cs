@@ -2,6 +2,30 @@ using MockSl.Application.OData;
 
 namespace MockSl.UnitTests.OData;
 
+public class LiteralConverterTests
+{
+    private static readonly MockSl.Domain.Metadata.FieldDefinition Quantity =
+        MockSl.Domain.Metadata.EntityCatalog.Invoices.Child("DocumentLines").Field("Quantity");
+
+    [Theory]
+    [InlineData("9999999999999")]
+    [InlineData("-9999999999999")]
+    [InlineData("0.5")]
+    public void Numbers_the_table_can_hold_are_accepted(string text)
+    {
+        Assert.Equal(decimal.Parse(text, System.Globalization.CultureInfo.InvariantCulture), LiteralConverter.ToDecimal(Quantity, text));
+    }
+
+    [Theory]
+    [InlineData("10000000000000")]
+    [InlineData("79228162514264337593543950335")]
+    [InlineData("abc")]
+    public void Larger_numbers_are_rejected_before_they_can_overflow(string text)
+    {
+        Assert.Throws<MockSl.Domain.Errors.ServiceLayerException>(() => LiteralConverter.ToDecimal(Quantity, text));
+    }
+}
+
 public class SapDateTests
 {
     [Theory]

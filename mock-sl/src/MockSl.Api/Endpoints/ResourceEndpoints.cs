@@ -28,12 +28,12 @@ public static class ResourceEndpoints
         var path = ResourcePath.Parse(resource ?? string.Empty);
         var entity = EntityCatalog.Find(path.EntitySet) ?? throw SapErrors.UnrecognizedResource();
 
-        if (path.Action is not null)
-        {
-            throw SapErrors.ActionNotSupported();
-        }
-
         var key = path.Key is null ? null : EntityKey.Bind(entity, path.Key);
+
+        if (path.Action is { } action)
+        {
+            return await RunActionAsync(entity, key, action, http, handler, cancellationToken);
+        }
 
         return (http.Request.Method, key) switch
         {
@@ -87,7 +87,7 @@ public static class ResourceEndpoints
         CancellationToken cancellationToken)
     {
         var query = ODataQuery.Parse(entity, ReadQueryOptions(http.Request));
-        var body = await handler.GetAsync(entity, key, query.Select, cancellationToken);
+        var body = await handler.GetAsync(entity, key, query, cancellationToken);
 
         body.Insert(0, "@odata.context", $"{SlJson.RootUrl(http.Request)}/$metadata#{entity.SetName}/$entity");
         return SlJson.Result(body);
@@ -130,6 +130,24 @@ public static class ResourceEndpoints
         CancellationToken cancellationToken)
     {
         await handler.DeleteAsync(entity, key, cancellationToken);
+        return Results.NoContent();
+    }
+
+    // A bound action needs POST and one object: POST Invoices(1)/Cancel (guide p.29).
+    private static async Task<IResult> RunActionAsync(
+        EntityDefinition entity,
+        IReadOnlyList<FieldValue>? key,
+        string action,
+        HttpContext http,
+        EntityHandler handler,
+        CancellationToken cancellationToken)
+    {
+        if (http.Request.Method != HttpMethods.Post || key is null)
+        {
+            throw SapErrors.ActionNotSupported();
+        }
+
+        await handler.RunActionAsync(entity, key, action, cancellationToken);
         return Results.NoContent();
     }
 

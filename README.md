@@ -5,7 +5,7 @@ SAP Business One Service Layer'ning nusxasi (mock) va unga HTTP orqali ulanadiga
 - Reja: [`PLAN.md`](PLAN.md)
 - Service Layer shartnomasi va tushuntirishlar `docs/` papkasida. U private va git'da saqlanmaydi.
 
-> **Holat:** 1B bosqichi: mock'da login, mijozlar va OData, backend'da mijozlar bilan ishlash tayyor. Qolgan obyektlar keyingi bosqichlarda qo'shiladi.
+> **Holat:** 2-bosqich: mock'da barcha obyektlar va biznes qoidalar, backend'da mijozlar bilan ishlash, oziq-ovqat do'koni skripti tayyor. `$expand`, UDF, SQL vazifalar va SQLQueries keyingi bosqichlarda qo'shiladi.
 
 ## Kerakli dasturlar
 
@@ -33,6 +33,38 @@ Bazani toza holatga qaytarish:
 ```bash
 docker compose down -v
 ```
+
+Python kabi avval IPv6 ni sinaydigan dasturlar Windows'da `localhost` bilan sekin ishlashi mumkin. Bunday holatda `127.0.0.1` yozing. `curl`, Postman va `newman` `localhost` bilan ishlaydi.
+
+## Mock Service Layer obyektlari
+
+| Obyekt | Jadvallar | Amallar |
+|---|---|---|
+| `BusinessPartners` | `OCRD` | Ro'yxat, olish, yaratish, o'zgartirish, o'chirish |
+| `EmployeesInfo` | `OHEM` | Ro'yxat, olish, yaratish, o'zgartirish, o'chirish |
+| `Items` | `OITM`, `OITW` | Ro'yxat, olish, yaratish, o'zgartirish, o'chirish. Qoldiq faqat hujjat orqali o'zgaradi |
+| `ChartOfAccounts` | `OACT` | Ro'yxat, olish, yaratish, o'zgartirish, o'chirish |
+| `Invoices` | `OINV`, `INV1`, `INV6` | Ro'yxat, olish, yaratish, o'zgartirish, `Cancel`, `Close`. O'chirib bo'lmaydi |
+| `PurchaseInvoices` | `OPCH`, `PCH1` | Ro'yxat, olish, yaratish, o'zgartirish, `Cancel`, `Close`. O'chirib bo'lmaydi |
+| `IncomingPayments` | `ORCT`, `RCT2` | Ro'yxat, olish, yaratish, o'zgartirish, `Cancel`. O'chirib bo'lmaydi |
+| `VendorPayments` | `OVPM`, `VPM2` | Ro'yxat, olish, yaratish, o'zgartirish, `Cancel`. O'chirib bo'lmaydi |
+| `CompanyService_GetPeriods`, `CompanyService_GetPeriod` | `OACP` | Standart hisoblarni o'qish |
+
+## Oziq-ovqat do'koni skripti
+
+Do'konning 10 siklini faqat Service Layer API orqali bajaradi: kassa hisobi, ta'minotchi, mol, xarid, xodim, mijoz, sotuv, kirim to'lov. Oxirida qoldiq = xarid - sotuv va qarz = sotuv - to'lov ekanini API'dan o'qib tekshiradi.
+
+```bash
+docker compose down -v
+docker compose up --build -d
+docker compose run --rm --build grocery-store
+```
+
+Hammasi mos kelsa, `ACCEPTED` chiqadi va chiqish kodi 0 bo'ladi. Farq bo'lsa 1, skript ishlay olmasa 2.
+
+Kodlar takrorlanmasligi kerak, shuning uchun ikkinchi marta ishga tushirish uchun bazani tozalang yoki `.env`da `GROCERY_PREFIX`ni o'zgartiring.
+
+Real SAP'da ishga tushirish uchun `.env`da `SL_USERNAME`, `SL_PASSWORD`, `SL_WAREHOUSE`, `SL_TAX_CODE` yoki `SL_VAT_GROUP`, `GROCERY_CASH_PARENT_ACCOUNT` va `GROCERY_CURRENT_MONTH`ni ham to'ldiring: `.env.example`ga qarang.
 
 ## Backend API
 
@@ -103,7 +135,11 @@ Buyruq qatoridan:
 npx newman run postman/SapB1.postman_collection.json -e postman/mock.postman_environment.json
 ```
 
-Testlar o'z ma'lumotlarini `PM` prefiksi bilan yaratadi va oxirida o'chiradi.
+Testlar o'z ma'lumotlarini `PM` va `PD` prefikslari bilan yaratadi. `PM` ma'lumotlari oxirida o'chiriladi. `PD` hujjatlari esa qoladi, chunki hujjatni o'chirib bo'lmaydi, lekin har ishga tushirish yangi kodlar ishlatadi, shuning uchun to'plamni qayta ishga tushirish mumkin.
+
+Mock environment'ida hisob-kitoblar soliqsiz. Real SAP'da soliq bor bo'lsa, `07 Documents and payments` papkasidagi aniq summalar farq qilishi mumkin.
+
+SQL vazifalari faqat do'kon ma'lumotlariga mo'ljallangan, shuning uchun ulardan oldin bazani tozalab, faqat do'kon skriptini ishga tushiring.
 
 ## Ishlab chiqish
 

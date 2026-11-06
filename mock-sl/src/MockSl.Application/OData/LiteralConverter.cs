@@ -10,6 +10,10 @@ namespace MockSl.Application.OData;
 /// </summary>
 public static class LiteralConverter
 {
+    // Amounts are NUMERIC(19,6) in the tables (SDK "Num 19.6"), which leaves 13 digits before the point.
+    // It also keeps quantity times price inside what a decimal can hold.
+    private const decimal LargestStoredNumber = 10_000_000_000_000m;
+
     public static object Convert(FieldDefinition field, Token literal) => (field.Type, literal.Kind) switch
     {
         (FieldType.Text, TokenKind.String) => literal.Text,
@@ -37,6 +41,7 @@ public static class LiteralConverter
 
     public static decimal ToDecimal(FieldDefinition field, string text) =>
         decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
+            && Math.Abs(number) < LargestStoredNumber
             ? number
             : throw SapErrors.InvalidValue(field.Name, text);
 }

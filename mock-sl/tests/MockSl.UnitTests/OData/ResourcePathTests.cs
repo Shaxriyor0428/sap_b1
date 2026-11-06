@@ -95,7 +95,7 @@ public class ResourcePathTests
     [InlineData("O'Brien", "('O''Brien')")]
     public void Key_is_written_back_for_the_location_header(string code, string expected)
     {
-        var row = new Dictionary<string, object?> { ["CardCode"] = code };
+        var row = new EntityRow(new Dictionary<string, object?> { ["CardCode"] = code });
 
         Assert.Equal(expected, EntityKey.Format(EntityCatalog.BusinessPartners, row));
     }

@@ -41,6 +41,18 @@ public static class EntitySqlBuilder
         return new SqlStatement(sql, parameters.Values);
     }
 
+    /// <summary>
+    /// NO KEY UPDATE, not plain UPDATE. Inserting a document line already takes a foreign key lock on
+    /// its item. Plain FOR UPDATE conflicts with that lock, so two sales of one item would each wait
+    /// for the other and deadlock. NO KEY UPDATE allows the foreign key lock and still queues updates.
+    /// </summary>
+    public static SqlStatement FindForUpdate(EntityDefinition entity, IReadOnlyList<FieldValue> key)
+    {
+        var parameters = new ParameterBag();
+        var sql = $"SELECT * FROM {SqlNames.Quote(entity.Table)} WHERE {KeyCondition(key, parameters)} FOR NO KEY UPDATE";
+        return new SqlStatement(sql, parameters.Values);
+    }
+
     public static SqlStatement Insert(EntityDefinition entity, IReadOnlyList<FieldValue> values)
     {
         var parameters = new ParameterBag();
@@ -77,8 +89,22 @@ public static class EntitySqlBuilder
         return new SqlStatement(sql, parameters.Values);
     }
 
+    public static SqlStatement AddToNumber(
+        EntityDefinition entity,
+        IReadOnlyList<FieldValue> key,
+        FieldDefinition field,
+        decimal amount)
+    {
+        var parameters = new ParameterBag();
+        var column = SqlNames.Quote(field.Column);
+        var sql = $"UPDATE {SqlNames.Quote(entity.Table)} SET {column} = {column} + {parameters.Add(amount)} WHERE {KeyCondition(key, parameters)}";
+        return new SqlStatement(sql, parameters.Values);
+    }
+
+    // Two API names can share a column, such as Cancelled and CancelStatus.
+    // It is read once, or the row would hold the same column name twice.
     private static string ColumnList(IEnumerable<FieldDefinition> fields) =>
-        string.Join(", ", fields.Select(field => SqlNames.Quote(field.Column)));
+        string.Join(", ", fields.Select(field => field.Column).Distinct().Select(SqlNames.Quote));
 
     private static string KeyCondition(IEnumerable<FieldValue> key, ParameterBag parameters) =>
         string.Join(" AND ", key.Select(part => $"{SqlNames.Quote(part.Field.Column)} = {parameters.Add(part.Value)}"));

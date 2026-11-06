@@ -34,6 +34,75 @@ public static class SapErrors
     public static ServiceLayerException RequiredProperty(string typeName, string property) =>
         new(BadRequest, "-10", $"Property '{property}' of '{typeName}' is required");
 
+    // Business rule errors. Code -10 as above, every text is a mock choice:
+    // public sources do not document these messages.
+
+    public static ServiceLayerException ReferenceNotFound(string property, string value) =>
+        new(BadRequest, "-10", $"No matching record for '{value}' in property '{property}'");
+
+    public static ServiceLayerException WrongPartnerType(string cardCode) =>
+        new(BadRequest, "-10", $"Business partner '{cardCode}' cannot be used for this document type");
+
+    public static ServiceLayerException DocumentWithoutLines() =>
+        new(BadRequest, "-10", "The document must contain at least one line");
+
+    public static ServiceLayerException AmountMustBePositive(string property) =>
+        new(BadRequest, "-10", $"Property '{property}' must be greater than zero");
+
+    public static ServiceLayerException NotEnoughStock(string itemCode, string warehouse) =>
+        new(BadRequest, "-10", $"Quantity falls into negative inventory for item '{itemCode}' in warehouse '{warehouse}'");
+
+    public static ServiceLayerException InstallmentDueDateMissing() =>
+        new(BadRequest, "-10", "Every installment must have a DueDate");
+
+    public static ServiceLayerException InstallmentAmountMissing() =>
+        new(BadRequest, "-10", "Every installment must have a Total or a Percentage");
+
+    public static ServiceLayerException InstallmentsDoNotMatchTotal() =>
+        new(BadRequest, "-10", "The installments must add up to the document total");
+
+    public static ServiceLayerException DocumentAlreadyCancelled() =>
+        new(BadRequest, "-10", "The document is already cancelled");
+
+    public static ServiceLayerException DocumentAlreadyClosed() =>
+        new(BadRequest, "-10", "The document is already closed");
+
+    public static ServiceLayerException DocumentHasPayments() =>
+        new(BadRequest, "-10", "Cancel the payments of this document first");
+
+    public static ServiceLayerException InvoiceOfAnotherPartner(int docEntry) =>
+        new(BadRequest, "-10", $"Document {docEntry} belongs to another business partner");
+
+    public static ServiceLayerException InvoiceNotOpen(int docEntry) =>
+        new(BadRequest, "-10", $"Document {docEntry} is closed or cancelled and cannot be paid");
+
+    public static ServiceLayerException PaymentExceedsOpenAmount(int docEntry) =>
+        new(BadRequest, "-10", $"The sum applied exceeds the open amount of document {docEntry}");
+
+    public static ServiceLayerException PaymentExceedsInstallment(int installmentId) =>
+        new(BadRequest, "-10", $"The sum applied exceeds the open amount of installment {installmentId}");
+
+    public static ServiceLayerException AppliedExceedsPayment() =>
+        new(BadRequest, "-10", "The sums applied to documents exceed the payment amount");
+
+    public static ServiceLayerException WrongInvoiceType(string expected) =>
+        new(BadRequest, "-10", $"This payment can only be applied to documents of type '{expected}'");
+
+    public static ServiceLayerException CashAccountRequired() =>
+        new(BadRequest, "-10", "No cash account was given and no default cash account is defined");
+
+    public static ServiceLayerException AccountNotPostable(string code) =>
+        new(BadRequest, "-10", $"Account '{code}' is not an active account");
+
+    public static ServiceLayerException ObjectInUse() =>
+        new(BadRequest, "-10", "The object is used by other documents and cannot be removed");
+
+    public static ServiceLayerException BrokenReference() =>
+        new(BadRequest, "-10", "A value refers to an object that does not exist");
+
+    public static ServiceLayerException NumberOutOfRange() =>
+        new(BadRequest, "-10", "A number is too large to be stored");
+
     // The guide uses -1000 for malformed requests (p.47, p.77).
     // The texts of the -1000 errors below are mock choices.
 

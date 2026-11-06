@@ -3633,6 +3633,4449 @@
       ]
     },
     {
+      "name": "06 Objects",
+      "item": [
+        {
+          "name": "Start a run with its own codes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts?$top=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts"
+              ],
+              "query": [
+                {
+                  "key": "$top",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Documents cannot be deleted, so these tests leave data behind. Each run uses new codes, which keeps it repeatable."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const id = Date.now().toString(36).slice(-5).toUpperCase();",
+                  "pm.environment.set('run', pm.environment.get('docPrefix') + id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: create a cash account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"FormatCode\": \"{{run}}K1\",\n  \"Name\": \"{{run}} Kassa\",\n  \"FatherAccountKey\": \"{{parentAccount}}\",\n  \"CashAccount\": \"tYES\",\n  \"ActiveAccount\": \"tYES\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"CashAccount is tYES\", () => pm.expect(pm.response.json().CashAccount).to.eql(\"tYES\"));",
+                  "pm.test(\"Balance is 0\", () => pm.expect(pm.response.json().Balance).to.eql(0));",
+                  "pm.environment.set('cashAccount', pm.response.json().Code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: second account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"FormatCode\": \"{{run}}K2\",\n  \"Name\": \"{{run}} Boshqa\",\n  \"FatherAccountKey\": \"{{parentAccount}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: unknown parent is refused",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"FormatCode\": \"{{run}}K3\",\n  \"Name\": \"x\",\n  \"FatherAccountKey\": \"NOPARENT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: get",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts('{{cashAccount}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts('{{cashAccount}}')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Name is {{run}} Kassa\", () => pm.expect(pm.response.json().Name).to.eql(pm.variables.replaceIn(\"{{run}} Kassa\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts('{{cashAccount}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts('{{cashAccount}}')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"{{run}} Asosiy kassa\",\n  \"Balance\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: name changed, balance did not",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts('{{cashAccount}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts('{{cashAccount}}')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Name is {{run}} Asosiy kassa\", () => pm.expect(pm.response.json().Name).to.eql(pm.variables.replaceIn(\"{{run}} Asosiy kassa\")));",
+                  "pm.test(\"Balance is 0\", () => pm.expect(pm.response.json().Balance).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: list one page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts?$select=Code,Name&$filter=startswith(Name,'{{run}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "Code,Name"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(Name,'{{run}}')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test('next link present', () => pm.expect(pm.response.json()['@odata.nextLink']).to.include('$skip=1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employees: create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/EmployeesInfo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "EmployeesInfo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"FirstName\": \"Ali\",\n  \"LastName\": \"{{run}}A\",\n  \"JobTitle\": \"Sotuvchi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"FirstName is Ali\", () => pm.expect(pm.response.json().FirstName).to.eql(\"Ali\"));",
+                  "pm.test(\"Active is tYES\", () => pm.expect(pm.response.json().Active).to.eql(\"tYES\"));",
+                  "pm.test('server gave a number', () => pm.expect(pm.response.json().EmployeeID).to.be.a('number'));",
+                  "pm.environment.set('employeeId', pm.response.json().EmployeeID);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employees: second",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/EmployeesInfo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "EmployeesInfo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"FirstName\": \"Vali\",\n  \"LastName\": \"{{run}}A\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employees: last name is required",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/EmployeesInfo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "EmployeesInfo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"FirstName\": \"Ali\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employees: get by number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/EmployeesInfo({{employeeId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "EmployeesInfo({{employeeId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"LastName is {{run}}A\", () => pm.expect(pm.response.json().LastName).to.eql(pm.variables.replaceIn(\"{{run}}A\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employees: update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/EmployeesInfo({{employeeId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "EmployeesInfo({{employeeId}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"JobTitle\": \"Kassir\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employees: changed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/EmployeesInfo({{employeeId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "EmployeesInfo({{employeeId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"JobTitle is Kassir\", () => pm.expect(pm.response.json().JobTitle).to.eql(\"Kassir\"));",
+                  "pm.test(\"FirstName is Ali\", () => pm.expect(pm.response.json().FirstName).to.eql(\"Ali\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employees: list one page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/EmployeesInfo?$select=EmployeeID&$filter=LastName eq '{{run}}A'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "EmployeesInfo"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "EmployeeID"
+                },
+                {
+                  "key": "$filter",
+                  "value": "LastName eq '{{run}}A'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test('next link present', () => pm.expect(pm.response.json()['@odata.nextLink']).to.include('$skip=1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: stock in the request is ignored",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ItemCode\": \"{{run}}I1\",\n  \"ItemName\": \"{{run}} Non\",\n  \"QuantityOnStock\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Roadmap: stock changes only through documents."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"QuantityOnStock is 0\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(0));",
+                  "pm.test(\"InventoryItem is tYES\", () => pm.expect(pm.response.json().InventoryItem).to.eql(\"tYES\"));",
+                  "pm.test(\"ItemWarehouseInfoCollection[0].WarehouseCode is 01\", () => pm.expect(pm.response.json().ItemWarehouseInfoCollection[0].WarehouseCode).to.eql(\"01\"));",
+                  "pm.test(\"ItemWarehouseInfoCollection[0].InStock is 0\", () => pm.expect(pm.response.json().ItemWarehouseInfoCollection[0].InStock).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: second",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ItemCode\": \"{{run}}I2\",\n  \"ItemName\": \"{{run}} Sut\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: third",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ItemCode\": \"{{run}}I3\",\n  \"ItemName\": \"{{run}} Choy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: duplicate code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ItemCode\": \"{{run}}I1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.79."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -10', () => pm.expect(String(pm.response.json().error.code)).to.eql('-10'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: get",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"ItemName is {{run}} Non\", () => pm.expect(pm.response.json().ItemName).to.eql(pm.variables.replaceIn(\"{{run}} Non\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ItemName\": \"{{run}} Issiq non\",\n  \"QuantityOnStock\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: name changed, stock did not",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"ItemName is {{run}} Issiq non\", () => pm.expect(pm.response.json().ItemName).to.eql(pm.variables.replaceIn(\"{{run}} Issiq non\")));",
+                  "pm.test(\"QuantityOnStock is 0\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Items: list one page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=2"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items?$select=ItemCode&$filter=startswith(ItemCode,'{{run}}')&$orderby=ItemCode",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "ItemCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(ItemCode,'{{run}}')"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "ItemCode"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('2 rows', () => pm.expect(pm.response.json().value.length).to.eql(2));",
+                  "pm.test('next link present', () => pm.expect(pm.response.json()['@odata.nextLink']).to.include('$skip=2'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Partners: customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"CardName\": \"{{run}} Mijoz\",\n  \"CardType\": \"cCustomer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Partners: second customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C2\",\n  \"CardName\": \"{{run}} Mijoz 2\",\n  \"CardType\": \"cCustomer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Partners: supplier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"CardName\": \"{{run}} Ta'minotchi\",\n  \"CardType\": \"cSupplier\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Default accounts: list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/CompanyService_GetPeriods",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "CompanyService_GetPeriods"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('has an entry', () => pm.expect(pm.response.json().value[0].AbsoluteEntry).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Default accounts: read one",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/CompanyService_GetPeriod",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "CompanyService_GetPeriod"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"PeriodCategoryParams\": {\n    \"AbsoluteEntry\": 1\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Table OACP. The EDMX has no entity set for it, only these two actions."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('accounts present', () => { const p = pm.response.json(); pm.expect(p).to.have.property('AccountforCashReceipt'); pm.expect(p).to.have.property('DefaultSaleAccount'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 Documents and payments",
+      "item": [
+        {
+          "name": "Purchase: totals come from the lines",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 100,\n      \"UnitPrice\": 10\n    },\n    {\n      \"ItemCode\": \"{{run}}I2\",\n      \"Quantity\": 50,\n      \"UnitPrice\": 4\n    }\n  ],\n  \"DocTotal\": 1,\n  \"Comments\": \"Birinchi xarid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "DocTotal in the request is ignored. These amounts assume no tax, as on the mock."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"DocTotal is 1200\", () => pm.expect(pm.response.json().DocTotal).to.eql(1200));",
+                  "pm.test(\"DocumentStatus is bost_Open\", () => pm.expect(pm.response.json().DocumentStatus).to.eql(\"bost_Open\"));",
+                  "pm.test(\"Cancelled is tNO\", () => pm.expect(pm.response.json().Cancelled).to.eql(\"tNO\"));",
+                  "pm.test(\"DocumentLines[0].LineNum is 0\", () => pm.expect(pm.response.json().DocumentLines[0].LineNum).to.eql(0));",
+                  "pm.test(\"DocumentLines[0].LineTotal is 1000\", () => pm.expect(pm.response.json().DocumentLines[0].LineTotal).to.eql(1000));",
+                  "pm.test(\"DocumentLines[1].LineTotal is 200\", () => pm.expect(pm.response.json().DocumentLines[1].LineTotal).to.eql(200));",
+                  "pm.test(\"DocumentLines[0].ItemDescription is {{run}} Issiq non\", () => pm.expect(pm.response.json().DocumentLines[0].ItemDescription).to.eql(pm.variables.replaceIn(\"{{run}} Issiq non\")));",
+                  "pm.test('DocEntry and DocNum are different things', () => { const b = pm.response.json(); pm.expect(b.DocNum).to.not.eql(b.DocEntry); });",
+                  "pm.test('Location header', () => pm.expect(pm.response.headers.get('Location')).to.include('PurchaseInvoices('));",
+                  "pm.environment.set('purchaseEntry', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase: stock went up",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 100\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(100));",
+                  "pm.test(\"ItemWarehouseInfoCollection[0].InStock is 100\", () => pm.expect(pm.response.json().ItemWarehouseInfoCollection[0].InStock).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase: second item too",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I2')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I2')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 50\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(50));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase: supplier balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}S1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}S1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is -1200\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(-1200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase: get comes with its lines",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchaseEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchaseEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('2 lines', () => pm.expect(pm.response.json().DocumentLines.length).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase: select can leave lines out",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchaseEntry}})?$select=DocEntry,DocTotal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchaseEntry}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry,DocTotal"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('no lines', () => pm.expect(pm.response.json()).to.not.have.property('DocumentLines'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase: delete is refused",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchaseEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchaseEntry}})"
+              ]
+            },
+            "description": "Guide p.27-28."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -5006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-5006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: a supplier cannot be the customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 1,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: lines are required",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: unknown item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}NONE\",\n      \"Quantity\": 1,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: unknown customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}NONE\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 1,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: not enough stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 1000,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: two lines of one item count together",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 60,\n      \"UnitPrice\": 10\n    },\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 60,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Each line alone fits the stock of 100, together they do not."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: quantity must be positive",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 0,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: refused documents changed nothing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 100\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: refused documents added no debt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is 0\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 10,\n      \"UnitPrice\": 30\n    },\n    {\n      \"ItemCode\": \"{{run}}I2\",\n      \"Quantity\": 5,\n      \"UnitPrice\": 20\n    }\n  ],\n  \"DocumentsOwner\": \"{{employeeId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"DocTotal is 400\", () => pm.expect(pm.response.json().DocTotal).to.eql(400));",
+                  "pm.test(\"PaidToDate is 0\", () => pm.expect(pm.response.json().PaidToDate).to.eql(0));",
+                  "pm.test(\"CardName is {{run}} Mijoz\", () => pm.expect(pm.response.json().CardName).to.eql(pm.variables.replaceIn(\"{{run}} Mijoz\")));",
+                  "pm.test(\"NumberOfInstallments is 1\", () => pm.expect(pm.response.json().NumberOfInstallments).to.eql(1));",
+                  "pm.test(\"DocumentInstallments[0].Total is 400\", () => pm.expect(pm.response.json().DocumentInstallments[0].Total).to.eql(400));",
+                  "pm.test(\"DocumentInstallments[0].InstallmentId is 1\", () => pm.expect(pm.response.json().DocumentInstallments[0].InstallmentId).to.eql(1));",
+                  "pm.test('employee attached', () => pm.expect(pm.response.json().DocumentsOwner).to.eql(Number(pm.environment.get('employeeId'))));",
+                  "pm.environment.set('saleEntry', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: stock went down",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 90\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(90));",
+                  "pm.test(\"ItemWarehouseInfoCollection[0].InStock is 90\", () => pm.expect(pm.response.json().ItemWarehouseInfoCollection[0].InStock).to.eql(90));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: second item too",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I2')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I2')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 45\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(45));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: customer owes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is 400\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: delete is refused",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            },
+            "description": "Guide p.27-28."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -5006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-5006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: update what may change",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Comments\": \"Izoh\",\n  \"DocTotal\": 1,\n  \"CardCode\": \"{{run}}C2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: only the comment changed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Comments is Izoh\", () => pm.expect(pm.response.json().Comments).to.eql(\"Izoh\"));",
+                  "pm.test(\"DocTotal is 400\", () => pm.expect(pm.response.json().DocTotal).to.eql(400));",
+                  "pm.test(\"CardCode is {{run}}C1\", () => pm.expect(pm.response.json().CardCode).to.eql(pm.variables.replaceIn(\"{{run}}C1\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: filter by status and date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices?$select=DocEntry&$filter=CardCode eq '{{run}}C1' and DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDate ge '2026-11-01'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$filter",
+                  "value": "CardCode eq '{{run}}C1' and DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDate ge '2026-11-01'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: update with an unknown employee",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"DocumentsOwner\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accounts: update with an unknown parent",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts('{{cashAccount}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts('{{cashAccount}}')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"FatherAccountKey\": \"NOPARENT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: quantity too large for the table",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 10000000000000,\n      \"UnitPrice\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sale: total too large for the table",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 1,\n      \"UnitPrice\": 9999999999999\n    },\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 1,\n      \"UnitPrice\": 9999999999999\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Each number fits alone, the total does not."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Master data in use cannot be deleted: customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Master data in use cannot be deleted: item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: part",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 100,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{saleEntry}}\",\n      \"SumApplied\": 100\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"DocType is rCustomer\", () => pm.expect(pm.response.json().DocType).to.eql(\"rCustomer\"));",
+                  "pm.test(\"CashSum is 100\", () => pm.expect(pm.response.json().CashSum).to.eql(100));",
+                  "pm.test(\"Cancelled is tNO\", () => pm.expect(pm.response.json().Cancelled).to.eql(\"tNO\"));",
+                  "pm.test(\"PaymentInvoices[0].SumApplied is 100\", () => pm.expect(pm.response.json().PaymentInvoices[0].SumApplied).to.eql(100));",
+                  "pm.test(\"PaymentInvoices[0].InvoiceType is it_Invoice\", () => pm.expect(pm.response.json().PaymentInvoices[0].InvoiceType).to.eql(\"it_Invoice\"));",
+                  "pm.test('row points to the sale', () => pm.expect(pm.response.json().PaymentInvoices[0].DocEntry).to.eql(Number(pm.environment.get('saleEntry'))));",
+                  "pm.environment.set('payment1', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: part leaves the sale open",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"PaidToDate is 100\", () => pm.expect(pm.response.json().PaidToDate).to.eql(100));",
+                  "pm.test(\"DocumentStatus is bost_Open\", () => pm.expect(pm.response.json().DocumentStatus).to.eql(\"bost_Open\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: debt fell",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is 300\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(300));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: cash grew",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts('{{cashAccount}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts('{{cashAccount}}')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Balance is 100\", () => pm.expect(pm.response.json().Balance).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: more than is open",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 1000,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{saleEntry}}\",\n      \"SumApplied\": 1000\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: applied more than was paid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 10,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{saleEntry}}\",\n      \"SumApplied\": 20\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: another customer's sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C2\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 10,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{saleEntry}}\",\n      \"SumApplied\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: a supplier cannot pay in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: unknown cash account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"NOACCOUNT\",\n  \"CashSum\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: unknown sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 10,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": 999999,\n      \"SumApplied\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: amount must be positive",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: refused payments changed nothing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"PaidToDate is 100\", () => pm.expect(pm.response.json().PaidToDate).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: cash unchanged too",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts('{{cashAccount}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts('{{cashAccount}}')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Balance is 100\", () => pm.expect(pm.response.json().Balance).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: the rest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 300,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{saleEntry}}\",\n      \"SumApplied\": 300\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('payment2', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: in full closes the sale",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"PaidToDate is 400\", () => pm.expect(pm.response.json().PaidToDate).to.eql(400));",
+                  "pm.test(\"DocumentStatus is bost_Close\", () => pm.expect(pm.response.json().DocumentStatus).to.eql(\"bost_Close\"));",
+                  "pm.test(\"DocumentLines[0].LineStatus is bost_Close\", () => pm.expect(pm.response.json().DocumentLines[0].LineStatus).to.eql(\"bost_Close\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: nothing owed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is 0\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: a closed sale cannot be paid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 1,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{saleEntry}}\",\n      \"SumApplied\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: delete is refused",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{payment2}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{payment2}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -5006', () => pm.expect(String(pm.response.json().error.code)).to.eql('-5006'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel payment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{payment2}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{payment2}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel payment: the sale opens again",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"PaidToDate is 100\", () => pm.expect(pm.response.json().PaidToDate).to.eql(100));",
+                  "pm.test(\"DocumentStatus is bost_Open\", () => pm.expect(pm.response.json().DocumentStatus).to.eql(\"bost_Open\"));",
+                  "pm.test(\"DocumentLines[0].LineStatus is bost_Open\", () => pm.expect(pm.response.json().DocumentLines[0].LineStatus).to.eql(\"bost_Open\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel payment: owed again",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is 300\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(300));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel payment: cash back",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ChartOfAccounts('{{cashAccount}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ChartOfAccounts('{{cashAccount}}')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Balance is 100\", () => pm.expect(pm.response.json().Balance).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel payment: marked",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{payment2}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{payment2}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cancelled is tYES\", () => pm.expect(pm.response.json().Cancelled).to.eql(\"tYES\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel payment: not twice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{payment2}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{payment2}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale: refused while it has payments",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel the remaining payment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{payment1}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{payment1}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale: marked",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cancelled is tYES\", () => pm.expect(pm.response.json().Cancelled).to.eql(\"tYES\"));",
+                  "pm.test(\"CancelStatus is csYes\", () => pm.expect(pm.response.json().CancelStatus).to.eql(\"csYes\"));",
+                  "pm.test(\"DocumentStatus is bost_Close\", () => pm.expect(pm.response.json().DocumentStatus).to.eql(\"bost_Close\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale: stock returned",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 100\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(100));",
+                  "pm.test(\"ItemWarehouseInfoCollection[0].InStock is 100\", () => pm.expect(pm.response.json().ItemWarehouseInfoCollection[0].InStock).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale: second item too",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I2')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I2')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 50\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(50));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale: debt removed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is 0\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale: not twice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel sale: a cancelled sale cannot be paid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 1,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{saleEntry}}\",\n      \"SumApplied\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel: a missing document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices(999999)/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices(999999)/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Action: GET is not an action",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{saleEntry}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{saleEntry}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Installments: amounts must add up",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 10,\n      \"UnitPrice\": 10\n    }\n  ],\n  \"DocumentInstallments\": [\n    {\n      \"DueDate\": \"2026-12-01\",\n      \"Total\": 40\n    },\n    {\n      \"DueDate\": \"2027-01-01\",\n      \"Total\": 40\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Installments: by amount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 10,\n      \"UnitPrice\": 10\n    }\n  ],\n  \"DocumentInstallments\": [\n    {\n      \"DueDate\": \"2026-12-01\",\n      \"Total\": 40\n    },\n    {\n      \"DueDate\": \"2027-01-01\",\n      \"Total\": 60\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"NumberOfInstallments is 2\", () => pm.expect(pm.response.json().NumberOfInstallments).to.eql(2));",
+                  "pm.test('2 installments', () => pm.expect(pm.response.json().DocumentInstallments.length).to.eql(2));",
+                  "pm.test(\"DocumentInstallments[0].InstallmentId is 1\", () => pm.expect(pm.response.json().DocumentInstallments[0].InstallmentId).to.eql(1));",
+                  "pm.test(\"DocumentInstallments[1].InstallmentId is 2\", () => pm.expect(pm.response.json().DocumentInstallments[1].InstallmentId).to.eql(2));",
+                  "pm.test(\"DocumentInstallments[1].Total is 60\", () => pm.expect(pm.response.json().DocumentInstallments[1].Total).to.eql(60));",
+                  "pm.test(\"DocumentInstallments[0].Percentage is 40\", () => pm.expect(pm.response.json().DocumentInstallments[0].Percentage).to.eql(40));",
+                  "pm.environment.set('closeEntry', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Installments: by percentage",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C2\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I1\",\n      \"Quantity\": 1,\n      \"UnitPrice\": 100\n    }\n  ],\n  \"DocumentInstallments\": [\n    {\n      \"DueDate\": \"2026-12-01\",\n      \"Percentage\": 25\n    },\n    {\n      \"DueDate\": \"2027-01-01\",\n      \"Percentage\": 75\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"DocumentInstallments[0].Total is 25\", () => pm.expect(pm.response.json().DocumentInstallments[0].Total).to.eql(25));",
+                  "pm.test(\"DocumentInstallments[1].Total is 75\", () => pm.expect(pm.response.json().DocumentInstallments[1].Total).to.eql(75));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close sale",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{closeEntry}})/Close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{closeEntry}})/Close"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close sale: closed but not cancelled",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{closeEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{closeEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"DocumentStatus is bost_Close\", () => pm.expect(pm.response.json().DocumentStatus).to.eql(\"bost_Close\"));",
+                  "pm.test(\"Cancelled is tNO\", () => pm.expect(pm.response.json().Cancelled).to.eql(\"tNO\"));",
+                  "pm.test(\"DocumentLines[0].LineStatus is bost_Close\", () => pm.expect(pm.response.json().DocumentLines[0].LineStatus).to.eql(\"bost_Close\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close sale: stock stays taken",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 89\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(89));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close sale: debt stays",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}C1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}C1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is 100\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close sale: not twice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{closeEntry}})/Close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{closeEntry}})/Close"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close sale: then it cannot be cancelled",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{closeEntry}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{closeEntry}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I3\",\n      \"Quantity\": 10,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"DocTotal is 100\", () => pm.expect(pm.response.json().DocTotal).to.eql(100));",
+                  "pm.environment.set('purchase2', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase: run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchase2}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchase2}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase: stock went back",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}I3')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}I3')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"QuantityOnStock is 0\", () => pm.expect(pm.response.json().QuantityOnStock).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase: balance went back",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}S1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}S1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is -1200\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(-1200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase: goods already sold",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I3\",\n      \"Quantity\": 5,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('purchase3', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase: sell them",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C2\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}I3\",\n      \"Quantity\": 5,\n      \"UnitPrice\": 20\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase: refused, stock would go negative",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchase3}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchase3}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel purchase: refused changed nothing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchase3}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchase3}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cancelled is tNO\", () => pm.expect(pm.response.json().Cancelled).to.eql(\"tNO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Close purchase",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchase3}})/Close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchase3}})/Close"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: a customer cannot be paid here",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 200,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{purchaseEntry}}\",\n      \"SumApplied\": 200\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"DocType is rSupplier\", () => pm.expect(pm.response.json().DocType).to.eql(\"rSupplier\"));",
+                  "pm.test(\"PaymentInvoices[0].InvoiceType is it_PurchaseInvoice\", () => pm.expect(pm.response.json().PaymentInvoices[0].InvoiceType).to.eql(\"it_PurchaseInvoice\"));",
+                  "pm.environment.set('vendorPayment', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: purchase is part paid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchaseEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchaseEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"PaidToDate is 200\", () => pm.expect(pm.response.json().PaidToDate).to.eql(200));",
+                  "pm.test(\"DocumentStatus is bost_Open\", () => pm.expect(pm.response.json().DocumentStatus).to.eql(\"bost_Open\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: supplier balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}S1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}S1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is -1050\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(-1050));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: get",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments({{vendorPayment}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments({{vendorPayment}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CashSum is 200\", () => pm.expect(pm.response.json().CashSum).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments?$select=DocEntry&$filter=CardCode eq '{{run}}S1'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$filter",
+                  "value": "CardCode eq '{{run}}S1'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: update the remark",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments({{vendorPayment}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments({{vendorPayment}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Remarks\": \"Izoh\",\n  \"CashSum\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: only the remark changed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments({{vendorPayment}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments({{vendorPayment}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Remarks is Izoh\", () => pm.expect(pm.response.json().Remarks).to.eql(\"Izoh\"));",
+                  "pm.test(\"CashSum is 200\", () => pm.expect(pm.response.json().CashSum).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: cancel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments({{vendorPayment}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments({{vendorPayment}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: purchase is unpaid again",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchaseEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchaseEntry}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"PaidToDate is 0\", () => pm.expect(pm.response.json().PaidToDate).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: balance back",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}S1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}S1')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"CurrentAccountBalance is -1250\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(-1250));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment without an account uses the default",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}C1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashSum\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mock decision: without CashAccount it uses OACP.LinkAct_3. Real SAP may ask for the account instead."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('an account was chosen', () => pm.expect(pm.response.json().CashAccount).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "99 Cleanup and logout",
       "item": [
         {

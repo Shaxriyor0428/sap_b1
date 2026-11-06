@@ -4,12 +4,10 @@ using MockSl.Domain.Metadata;
 
 namespace MockSl.Application.Entities;
 
-/// <summary>Turns a database row into the JSON the client sees: Service Layer names and enum names.</summary>
+/// <summary>Turns database rows into the JSON the client sees: Service Layer names and enum names.</summary>
 public static class EntitySerializer
 {
-    public static JsonObject ToJson(
-        IEnumerable<FieldDefinition> fields,
-        IReadOnlyDictionary<string, object?> row)
+    public static JsonObject ToJson(IEnumerable<FieldDefinition> fields, EntityRow row)
     {
         var json = new JsonObject();
 
@@ -19,6 +17,18 @@ public static class EntitySerializer
         }
 
         return json;
+    }
+
+    public static JsonArray ToJsonArray(ChildDefinition child, IEnumerable<EntityRow> rows)
+    {
+        var array = new JsonArray();
+
+        foreach (var row in rows)
+        {
+            array.Add(ToJson(child.Fields, row));
+        }
+
+        return array;
     }
 
     private static JsonNode? ToJsonValue(FieldDefinition field, object? value) => value switch

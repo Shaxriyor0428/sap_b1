@@ -86,6 +86,38 @@ public class ODataQueryTests
     }
 
     [Fact]
+    public void Without_select_collections_come_with_the_object()
+    {
+        var query = ODataQuery.Parse(EntityCatalog.Invoices, new Dictionary<string, string>());
+
+        Assert.Equal(["DocumentLines", "DocumentInstallments"], query.Children.Select(child => child.Name));
+    }
+
+    [Fact]
+    public void Select_can_ask_for_a_collection_or_leave_it_out()
+    {
+        var invoices = EntityCatalog.Invoices;
+
+        var withLines = ODataQuery.Parse(invoices, new Dictionary<string, string> { ["$select"] = "DocEntry,DocumentLines" });
+        var withoutLines = ODataQuery.Parse(invoices, new Dictionary<string, string> { ["$select"] = "DocEntry,DocTotal" });
+
+        Assert.Equal("DocumentLines", Assert.Single(withLines.Children).Name);
+        Assert.Empty(withoutLines.Children);
+        Assert.Equal(["DocEntry", "DocTotal"], withoutLines.Select.Select(field => field.Name));
+    }
+
+    [Fact]
+    public void Document_can_be_filtered_by_status_owner_and_date()
+    {
+        var query = ODataQuery.Parse(EntityCatalog.Invoices, new Dictionary<string, string>
+        {
+            ["$filter"] = "DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocumentsOwner eq 3 and DocDate ge '2026-11-01'",
+        });
+
+        Assert.NotNull(query.Filter);
+    }
+
+    [Fact]
     public void Ordinary_query_parameters_are_ignored()
     {
         Assert.Null(Parse(("foo", "bar")).Filter);

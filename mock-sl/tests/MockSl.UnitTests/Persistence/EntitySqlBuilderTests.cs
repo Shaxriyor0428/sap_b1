@@ -67,6 +67,38 @@ public class EntitySqlBuilderTests
     }
 
     [Fact]
+    public void Two_api_names_of_one_column_read_it_once()
+    {
+        var invoices = EntityCatalog.Invoices;
+        var columns = new[] { invoices.Field("Cancelled"), invoices.Field("CancelStatus") };
+
+        var statement = EntitySqlBuilder.Select(invoices, new EntityQuery(columns, null, [], null, 0));
+
+        Assert.StartsWith("SELECT \"CANCELED\" FROM \"OINV\"", statement.Text);
+    }
+
+    [Fact]
+    public void Find_for_update_locks_the_row()
+    {
+        var statement = EntitySqlBuilder.FindForUpdate(Entity, [new FieldValue(CardCode, "c1")]);
+
+        Assert.Equal("SELECT * FROM \"OCRD\" WHERE \"CardCode\" = @p0 FOR NO KEY UPDATE", statement.Text);
+    }
+
+    [Fact]
+    public void Add_to_number_changes_the_value_in_one_statement()
+    {
+        var statement = EntitySqlBuilder.AddToNumber(
+            Entity,
+            [new FieldValue(CardCode, "c1")],
+            Entity.Field("CurrentAccountBalance"),
+            -25m);
+
+        Assert.Equal("UPDATE \"OCRD\" SET \"Balance\" = \"Balance\" + @p0 WHERE \"CardCode\" = @p1", statement.Text);
+        Assert.Equal([-25m, "c1"], statement.Parameters.Select(parameter => parameter.Value));
+    }
+
+    [Fact]
     public void Delete_targets_only_the_given_key()
     {
         var statement = EntitySqlBuilder.Delete(Entity, [new FieldValue(CardCode, "c1")]);
