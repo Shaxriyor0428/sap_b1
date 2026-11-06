@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sap.Application\Sap.Application.csproj" />
+    <ProjectReference Include="..\Sap.Infrastructure\Sap.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/api/" />
+  <Folder Name="/api/src/">
+    <Project Path="api/src/Sap.Api/Sap.Api.csproj" />
+    <Project Path="api/src/Sap.Application/Sap.Application.csproj" />
+    <Project Path="api/src/Sap.Infrastructure/Sap.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/api/tests/">
+    <Project Path="api/tests/Sap.UnitTests/Sap.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/mock-sl/" />
   <Folder Name="/mock-sl/src/">
     <Project Path="mock-sl/src/MockSl.Api/MockSl.Api.csproj" />

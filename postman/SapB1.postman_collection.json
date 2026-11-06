@@ -11,9 +11,10 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Sends the session cookies unless the request set its own Cookie header.",
+          "// Sends the Service Layer cookies, unless the request set its own or goes to the backend API.",
           "const session = pm.environment.get('B1SESSION');",
-          "if (session && !pm.request.headers.has('Cookie') && !pm.info.requestName.startsWith('Login')) {",
+          "const isServiceLayer = !pm.info.requestName.startsWith('API ') && !pm.info.requestName.startsWith('Login');",
+          "if (session && isServiceLayer && !pm.request.headers.has('Cookie')) {",
           "  pm.request.headers.upsert({ key: 'Cookie', value: `B1SESSION=${session}; ROUTEID=${pm.environment.get('ROUTEID') || ''}` });",
           "}"
         ]
@@ -1834,6 +1835,1796 @@
                 "exec": [
                   "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
                   "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Backend API",
+      "item": [
+        {
+          "name": "API no token is rejected",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/customers",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code SESSION_EXPIRED', () => pm.expect(pm.response.json().code).to.eql('SESSION_EXPIRED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API unknown token is rejected",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer not-a-token"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code SESSION_EXPIRED', () => pm.expect(pm.response.json().code).to.eql('SESSION_EXPIRED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API login: wrong password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"{{UserName}}\",\n  \"password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "The Service Layer decides, and its message is passed on."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API login: fields missing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"{{UserName}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code INVALID_REQUEST', () => pm.expect(pm.response.json().code).to.eql('INVALID_REQUEST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API login: broken JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userName\":",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code INVALID_REQUEST', () => pm.expect(pm.response.json().code).to.eql('INVALID_REQUEST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"{{UserName}}\",\n  \"password\": \"{{Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('token and timeout', () => { pm.expect(body.token).to.be.a('string'); pm.expect(body.token.length).to.be.above(31); pm.expect(body.expiresInMinutes).to.be.a('number'); });",
+                  "pm.test('Service Layer session stays on the server', () => { pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(false); pm.expect(Object.keys(body)).to.have.members(['token','expiresInMinutes']); });",
+                  "pm.environment.set('apiToken', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API prepare test data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&pageSize=100",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "100"
+                }
+              ]
+            },
+            "description": "Removes leftovers of an earlier run, then creates 25 customers through this API."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const prefix = pm.environment.get('prefix');",
+                  "const url = pm.environment.get('apiUrl') + '/customers';",
+                  "const header = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + pm.environment.get('apiToken') };",
+                  "const customers = [];",
+                  "for (let i = 1; i <= 25; i++) {",
+                  "  const n = String(i).padStart(3, '0');",
+                  "  customers.push({ code: prefix + 'A' + n, name: prefix + 'Api Customer ' + n, phone: '+99897' + (1000000 + i), address: (i % 5 === 0 ? 'Navoiy ' : 'Amir Temur ') + i, city: 'Toshkent' });",
+                  "}",
+                  "customers[0].name = prefix + \"Api O'Brien\";",
+                  "const create = (i) => {",
+                  "  if (i >= customers.length) return;",
+                  "  pm.sendRequest({ url, method: 'POST', header, body: { mode: 'raw', raw: JSON.stringify(customers[i]) } }, (err, res) => {",
+                  "    pm.test(`customer ${customers[i].code} created`, () => { pm.expect(err).to.eql(null); pm.expect(res.code).to.eql(201); });",
+                  "    create(i + 1);",
+                  "  });",
+                  "};",
+                  "const old = (pm.response.json().items || []).map(c => c.code);",
+                  "const removeOld = (i) => i < old.length",
+                  "  ? pm.sendRequest({ url: `${url}/${old[i]}`, method: 'DELETE', header }, () => removeOld(i + 1))",
+                  "  : create(0);",
+                  "removeOld(0);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API list: first page, default size 20",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json(); pm.test('20 items, page 1', () => { pm.expect(body.items.length).to.eql(20); pm.expect(body.page).to.eql(1); pm.expect(body.pageSize).to.eql(20); pm.expect(body.hasNextPage).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API list: last page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&page=2",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json(); pm.test('5 items, page 2', () => { pm.expect(body.items.length).to.eql(5); pm.expect(body.page).to.eql(2); pm.expect(body.pageSize).to.eql(20); pm.expect(body.hasNextPage).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API list: page exactly full, no next page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&page=5&pageSize=5",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "page",
+                  "value": "5"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json(); pm.test('5 items, page 5', () => { pm.expect(body.items.length).to.eql(5); pm.expect(body.page).to.eql(5); pm.expect(body.pageSize).to.eql(5); pm.expect(body.hasNextPage).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API list: page after the end",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&page=6&pageSize=5",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "page",
+                  "value": "6"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json(); pm.test('0 items, page 6', () => { pm.expect(body.items.length).to.eql(0); pm.expect(body.page).to.eql(6); pm.expect(body.pageSize).to.eql(5); pm.expect(body.hasNextPage).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API list: pages do not overlap",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&page=2&pageSize=2",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([p + 'A003', p + 'A004']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API list: customer fields",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&pageSize=1&page=2",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "1"
+                },
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('own field names', () => pm.expect(Object.keys(pm.response.json().items[0])).to.have.members(['code','name','phone','cellular','email','address','city','balance']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API filter: phone",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&phone=971000007",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "phone",
+                  "value": "971000007"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([p + 'A007']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API filter: address",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&address=Navoiy",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "address",
+                  "value": "Navoiy"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([p + 'A005', p + 'A010', p + 'A015', p + 'A020', p + 'A025']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API filter: all three joined with and",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api%20Customer%20010&phone=97&address=Navoiy",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api%20Customer%20010"
+                },
+                {
+                  "key": "phone",
+                  "value": "97"
+                },
+                {
+                  "key": "address",
+                  "value": "Navoiy"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([p + 'A010']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API filter: conditions narrow, not widen",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&phone=971000007&address=Navoiy",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "phone",
+                  "value": "971000007"
+                },
+                {
+                  "key": "address",
+                  "value": "Navoiy"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API filter: apostrophe in a value",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api%20O'Brien",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api%20O'Brien"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([p + 'A001']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API filter: OData injection stays a value",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name=x') or (CardType eq 'cSupplier",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "x') or (CardType eq 'cSupplier"
+                }
+              ]
+            },
+            "description": "If the quote were not doubled, this would return suppliers too."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API paging: page 0",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?page=0",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code INVALID_REQUEST', () => pm.expect(pm.response.json().code).to.eql('INVALID_REQUEST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API paging: pageSize too large",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?pageSize=101",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "101"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code INVALID_REQUEST', () => pm.expect(pm.response.json().code).to.eql('INVALID_REQUEST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API paging: page is not a number",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?page=abc",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "abc"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code INVALID_REQUEST', () => pm.expect(pm.response.json().code).to.eql('INVALID_REQUEST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{prefix}}A901\",\n  \"name\": \"{{prefix}}Api Yangi\",\n  \"phone\": \"+998971112233\",\n  \"cellular\": \"+998901112233\",\n  \"email\": \"yangi@example.uz\",\n  \"address\": \"Navoiy 1\",\n  \"city\": \"Toshkent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const c = pm.response.json();",
+                  "pm.test('created customer returned', () => { pm.expect(c.code).to.eql(pm.environment.get('prefix') + 'A901'); pm.expect(c.name).to.eql(pm.environment.get('prefix') + 'Api Yangi'); pm.expect(c.email).to.eql('yangi@example.uz'); pm.expect(c.balance).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Created customer is cCustomer in the Service Layer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}A901')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}A901')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('type and mapped fields', () => { const b = pm.response.json(); pm.expect(b.CardType).to.eql('cCustomer'); pm.expect(b.EmailAddress).to.eql('yangi@example.uz'); pm.expect(b.Cellular).to.eql('+998901112233'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API create: duplicate code shows the Service Layer error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{prefix}}A901\",\n  \"name\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code -10', () => pm.expect(pm.response.json().code).to.eql('-10'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API create: missing code shows the Service Layer error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{prefix}}Api Kodsiz\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API create: misspelled field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{prefix}}A902\",\n  \"nmae\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code INVALID_REQUEST', () => pm.expect(pm.response.json().code).to.eql('INVALID_REQUEST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers/{{prefix}}A901",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers/{{prefix}}A901"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{prefix}}Api Yangilangan\",\n  \"city\": \"Samarqand\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));",
+                  "pm.test('no body', () => pm.expect(pm.response.text()).to.eql(''));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API update: other fields kept",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api%20Yangilangan",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api%20Yangilangan"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('changed and kept', () => { const c = pm.response.json().items[0]; pm.expect(c.city).to.eql('Samarqand'); pm.expect(c.phone).to.eql('+998971112233'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API update: not found",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers/{{prefix}}NONE",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers/{{prefix}}NONE"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API update: misspelled field",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers/{{prefix}}A901",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers/{{prefix}}A901"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nmae\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code INVALID_REQUEST', () => pm.expect(pm.response.json().code).to.eql('INVALID_REQUEST'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create a supplier in the Service Layer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{prefix}}S01\",\n  \"CardName\": \"{{prefix}}Api Supplier\",\n  \"CardType\": \"cSupplier\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API list: supplier is not a customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api%20Supplier",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api%20Supplier"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact customers', () => pm.expect(pm.response.json().items.map(c => c.code)).to.eql([]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API update: supplier is refused",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers/{{prefix}}S01",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers/{{prefix}}S01"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code CUSTOMER_NOT_FOUND', () => pm.expect(pm.response.json().code).to.eql('CUSTOMER_NOT_FOUND'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API delete: supplier is refused",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers/{{prefix}}S01",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers/{{prefix}}S01"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code CUSTOMER_NOT_FOUND', () => pm.expect(pm.response.json().code).to.eql('CUSTOMER_NOT_FOUND'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Supplier is untouched",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}S01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}S01')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('name unchanged', () => pm.expect(pm.response.json().CardName).to.eql(pm.environment.get('prefix') + 'Api Supplier'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove the supplier",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}S01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}S01')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers/{{prefix}}A901",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers/{{prefix}}A901"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API delete: not found",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers/{{prefix}}A901",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers/{{prefix}}A901"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API delete test data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name={{prefix}}Api&pageSize=100",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{prefix}}Api"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const url = pm.environment.get('apiUrl') + '/customers';",
+                  "const header = { Authorization: 'Bearer ' + pm.environment.get('apiToken') };",
+                  "const codes = pm.response.json().items.map(c => c.code);",
+                  "const remove = (i) => {",
+                  "  if (i >= codes.length) return;",
+                  "  pm.sendRequest({ url: `${url}/${codes[i]}`, method: 'DELETE', header }, (err, res) => {",
+                  "    pm.test(`customer ${codes[i]} deleted`, () => pm.expect(res.code).to.eql(204));",
+                  "    remove(i + 1);",
+                  "  });",
+                  "};",
+                  "remove(0);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/logout",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API after logout the token is rejected",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('API error format', () => { const e = pm.response.json(); pm.expect(e.code).to.be.a('string'); pm.expect(e.message).to.be.a('string'); });",
+                  "pm.test('error code SESSION_EXPIRED', () => pm.expect(pm.response.json().code).to.eql('SESSION_EXPIRED'));"
                 ]
               }
             }

@@ -33,5 +33,17 @@ services:
       db:
         condition: service_healthy
 
+  # No depends_on on mock-sl: with real SAP settings, "docker compose up api" starts only this service.
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      SL_BASE_URL: ${SL_BASE_URL:-http://mock-sl:8080/b1s/v2/}
+      SL_COMPANY_DB: ${SL_COMPANY_DB:-TEST}
+      SL_SKIP_TLS_VERIFY: ${SL_SKIP_TLS_VERIFY:-false}
+    ports:
+      - "${API_HOST_PORT:-8080}:8080"
+
 volumes:
   db-data:
