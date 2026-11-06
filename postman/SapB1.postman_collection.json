@@ -1,0 +1,1963 @@
+{
+  "info": {
+    "_postman_id": "6f6f1a52-7c2e-4a3b-9a55-1b0a5f3d1a01",
+    "name": "SAP B1 Service Layer (mock and real)",
+    "description": "Same requests for the mock and for real SAP: only the environment changes. Docs: docs/sl-contract.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Sends the session cookies unless the request set its own Cookie header.",
+          "const session = pm.environment.get('B1SESSION');",
+          "if (session && !pm.request.headers.has('Cookie') && !pm.info.requestName.startsWith('Login')) {",
+          "  pm.request.headers.upsert({ key: 'Cookie', value: `B1SESSION=${session}; ROUTEID=${pm.environment.get('ROUTEID') || ''}` });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "[no session] Request is rejected",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "B1SESSION=not-a-session"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "description": "Guide p.17: 401, code 301."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code 301', () => pm.expect(String(pm.response.json().error.code)).to.eql('301'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login: wrong password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CompanyDB\": \"{{CompanyDB}}\",\n  \"UserName\": \"{{UserName}}\",\n  \"Password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "SAP does not document this response: see the open questions in docs/sl-contract.md."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login: wrong CompanyDB",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CompanyDB\": \"NO_SUCH_DB\",\n  \"UserName\": \"{{UserName}}\",\n  \"Password\": \"{{Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CompanyDB\": \"{{CompanyDB}}\",\n  \"UserName\": \"{{UserName}}\",\n  \"Password\": \"{{Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('session fields', () => { pm.expect(body.SessionId).to.be.a('string'); pm.expect(body.Version).to.be.a('string'); pm.expect(body.SessionTimeout).to.be.a('number'); });",
+                  "const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value);",
+                  "pm.test('B1SESSION cookie', () => pm.expect(cookies.some(c => c.startsWith('B1SESSION=' + body.SessionId))).to.eql(true));",
+                  "pm.environment.set('B1SESSION', body.SessionId);",
+                  "const route = cookies.map(c => /ROUTEID=([^;]+)/.exec(c)).find(Boolean);",
+                  "pm.environment.set('ROUTEID', route ? route[1] : '');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Test data",
+      "item": [
+        {
+          "name": "Create test data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=0"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}')"
+                }
+              ]
+            },
+            "description": "Removes leftovers of an earlier run, then creates 25 partners with the code prefix from the environment."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const prefix = pm.environment.get('prefix');",
+                  "const base = pm.environment.get('baseUrl');",
+                  "const cookie = `B1SESSION=${pm.environment.get('B1SESSION')}; ROUTEID=${pm.environment.get('ROUTEID') || ''}`;",
+                  "const names = ['Ali Valiyev','Alisher Karimov','Bobur Toshev','Dilshod Ergashev','Eldor Rasulov','Farrux Rahmonov','Gulnora Saidova','Hamid Ismoilov','Ibrohim Nazarov','Jasur Umarov',\"O'tkir Yusupov\",'Komil Sobirov','Laziz Qodirov','Madina Karimova','Nodir Salimov','Otabek Rahimov','Parviz Azimov','Rustam Xolmatov','Sardor Ganiyev','Temur Zokirov','Umid Sharipov','Vali Tursunov'];",
+                  "const cities = ['Toshkent','Samarqand','Buxoro'];",
+                  "const fixtures = names.map((n, i) => ({ CardCode: prefix + String(i + 1).padStart(3, '0'), CardName: n, CardType: 'cCustomer', Phone1: '+99890' + String(1000000 + i), City: cities[i % 3], Address: 'Amir Temur ' + (i + 1) }));",
+                  "fixtures[1].Phone1 = null;",
+                  "fixtures.push({ CardCode: prefix + '901', CardName: 'Ali Supplier', CardType: 'cSupplier', Phone1: '+998711111111', City: 'Toshkent' });",
+                  "fixtures.push({ CardCode: prefix + '902', CardName: 'Ali Supply Two', CardType: 'cSupplier', City: 'Samarqand' });",
+                  "fixtures.push({ CardCode: prefix + '903', CardName: 'Lead Person', CardType: 'cLid', City: 'Buxoro' });",
+                  "const send = (method, path, body, done) => pm.sendRequest({",
+                  "  url: base + '/' + path, method,",
+                  "  header: { 'Content-Type': 'application/json', Cookie: cookie },",
+                  "  body: body ? { mode: 'raw', raw: JSON.stringify(body) } : undefined,",
+                  "}, done);",
+                  "const create = (i) => {",
+                  "  if (i >= fixtures.length) return;",
+                  "  send('POST', 'BusinessPartners', fixtures[i], (err, res) => {",
+                  "    pm.test(`test partner ${fixtures[i].CardCode} created`, () => { pm.expect(err).to.eql(null); pm.expect(res.code).to.eql(201); });",
+                  "    create(i + 1);",
+                  "  });",
+                  "};",
+                  "const old = (pm.response.json().value || []).map(r => r.CardCode);",
+                  "const removeOld = (i) => i < old.length ? send('DELETE', `BusinessPartners('${old[i]}')`, null, () => removeOld(i + 1)) : create(0);",
+                  "removeOld(0);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 BusinessPartners CRUD",
+      "item": [
+        {
+          "name": "Create customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{prefix}}C01\",\n  \"CardName\": \"Yangi Mijoz\",\n  \"CardType\": \"cCustomer\",\n  \"Phone1\": \"+998901234567\",\n  \"EmailAddress\": \"mijoz@example.uz\",\n  \"Address\": \"Navoiy 1\",\n  \"City\": \"Toshkent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('object is returned', () => { pm.expect(body.CardCode).to.eql(pm.environment.get('prefix') + 'C01'); pm.expect(body.CardType).to.eql('cCustomer'); pm.expect(body.EmailAddress).to.eql('mijoz@example.uz'); });",
+                  "pm.test('Location header', () => pm.expect(pm.response.headers.get('Location')).to.include(`BusinessPartners('${body.CardCode}')`));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create: duplicate code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{prefix}}C01\",\n  \"CardName\": \"Boshqa\",\n  \"CardType\": \"cCustomer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.25."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -10', () => pm.expect(String(pm.response.json().error.code)).to.eql('-10'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create: enum by database value",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{prefix}}C02\",\n  \"CardName\": \"Enum qiymati\",\n  \"CardType\": \"S\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.24: both the name and the value are accepted."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('returned as enum name', () => pm.expect(pm.response.json().CardType).to.eql('cSupplier'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create: required field missing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardName\": \"Kodsiz\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create: unknown field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{prefix}}C03\",\n  \"NoSuchField\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create: invalid enum",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{prefix}}C03\",\n  \"CardType\": \"cNothing\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get by key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('right object', () => pm.expect(pm.response.json().CardName).to.eql('Yangi Mijoz'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get by named key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners(CardCode='{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners(CardCode='{{prefix}}C01')"
+              ]
+            },
+            "description": "Guide p.26."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('right object', () => pm.expect(pm.response.json().CardName).to.eql('Yangi Mijoz'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get with $select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')?$select=CardCode,CardName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode,CardName"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only selected fields', () => { const b = pm.response.json(); pm.expect(b.CardName).to.eql('Yangi Mijoz'); pm.expect(b).to.not.have.property('Phone1'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get: not found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}NONE')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}NONE')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code -2028', () => pm.expect(String(pm.response.json().error.code)).to.eql('-2028'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardName\": \"Yangilangan Mijoz\",\n  \"City\": \"Samarqand\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));",
+                  "pm.test('no body', () => pm.expect(pm.response.text()).to.eql(''));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update: other fields kept",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ]
+            },
+            "description": "Guide p.27: PATCH keeps properties that are not sent."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('changed and kept', () => { const b = pm.response.json(); pm.expect(b.CardName).to.eql('Yangilangan Mijoz'); pm.expect(b.City).to.eql('Samarqand'); pm.expect(b.Phone1).to.eql('+998901234567'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update: read-only fields ignored",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CurrentAccountBalance\": 999999,\n  \"CardCode\": \"CHANGED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.27: read-only properties are ignored silently."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update: read-only fields unchanged",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('balance and code unchanged', () => { const b = pm.response.json(); pm.expect(b.CurrentAccountBalance).to.eql(0); pm.expect(b.CardCode).to.eql(pm.environment.get('prefix') + 'C01'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update: not found",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}NONE')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}NONE')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardName\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));",
+                  "pm.test('no body', () => pm.expect(pm.response.text()).to.eql(''));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete: object is gone",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C01')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C01')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete: not found",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}NONE')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}NONE')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete second test object",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}C02')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}C02')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 OData queries",
+      "item": [
+        {
+          "name": "$select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode,CardName,Phone1&$filter=startswith(CardCode,'{{prefix}}')&$top=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode,CardName,Phone1"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}')"
+                },
+                {
+                  "key": "$top",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only selected fields', () => pm.expect(Object.keys(pm.response.json().value[0])).to.have.members(['CardCode','CardName','Phone1']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: eq on enum name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and CardType eq 'cSupplier'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and CardType eq 'cSupplier'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '901', p + '902']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: eq on enum value",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and CardType eq 'S'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and CardType eq 'S'"
+                }
+              ]
+            },
+            "description": "Guide p.33."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '901', p + '902']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: ne",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and CardType ne 'cCustomer' and CardType ne 'cSupplier'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and CardType ne 'cCustomer' and CardType ne 'cSupplier'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '903']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: and + contains",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and CardType eq 'cCustomer' and contains(CardName,'Ali')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and CardType eq 'cCustomer' and contains(CardName,'Ali')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '001', p + '002']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: or",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and (CardName eq 'Bobur Toshev' or CardName eq 'Jasur Umarov')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and (CardName eq 'Bobur Toshev' or CardName eq 'Jasur Umarov')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '003', p + '010']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: not + parentheses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and not (CardType eq 'cCustomer' or CardType eq 'cLid')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and not (CardType eq 'cCustomer' or CardType eq 'cLid')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '901', p + '902']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: startswith",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and startswith(CardName,'Bob')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and startswith(CardName,'Bob')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '003']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: endswith",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and endswith(CardName,'Toshev')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and endswith(CardName,'Toshev')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '003']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: eq null",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and Phone1 eq null and CardType eq 'cCustomer'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and Phone1 eq null and CardType eq 'cCustomer'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '002']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: apostrophe in value",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and CardName eq 'O''tkir Yusupov'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and CardName eq 'O''tkir Yusupov'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '011']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$filter: SQL injection stays a value",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and CardName eq 'x'' OR ''1''=''1'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and CardName eq 'x'' OR ''1''=''1'"
+                }
+              ]
+            },
+            "description": "The text is compared as one value, so nothing matches and nothing breaks."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('0 rows', () => pm.expect(pm.response.json().value.length).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$orderby: desc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}') and CardType eq 'cSupplier'&$orderby=CardCode desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}') and CardType eq 'cSupplier'"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "CardCode desc"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '902', p + '901']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "$top + $skip",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}')&$orderby=CardCode&$top=2&$skip=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}')"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$top",
+                  "value": "2"
+                },
+                {
+                  "key": "$skip",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix'); pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '003', p + '004']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paging: default page of 20",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}')&$orderby=CardCode",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}')"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "CardCode"
+                }
+              ]
+            },
+            "description": "Guide p.35."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('20 rows', () => pm.expect(pm.response.json().value.length).to.eql(20));",
+                  "const link = pm.response.json()['@odata.nextLink'];",
+                  "pm.test('next link present', () => pm.expect(link).to.include('$skip=20'));",
+                  "pm.environment.set('nextLink', link);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paging: follow next link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{nextLink}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{nextLink}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('5 rows', () => pm.expect(pm.response.json().value.length).to.eql(5));",
+                  "pm.test('last page has no next link', () => pm.expect(pm.response.json()).to.not.have.property('@odata.nextLink'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paging: Prefer maxpagesize",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=5"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('5 rows', () => pm.expect(pm.response.json().value.length).to.eql(5));",
+                  "pm.test('Preference-Applied', () => pm.expect(pm.response.headers.get('Preference-Applied')).to.eql('odata.maxpagesize=5'));",
+                  "pm.test('next link present', () => pm.expect(pm.response.json()['@odata.nextLink']).to.include('$skip=5'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paging: Prefer maxpagesize=0 turns it off",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=0"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('25 rows', () => pm.expect(pm.response.json().value.length).to.eql(25));",
+                  "pm.test('no next link', () => pm.expect(pm.response.json()).to.not.have.property('@odata.nextLink'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error: unknown field in $filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$filter=NoSuchField eq 'x'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "NoSuchField eq 'x'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error: bad $filter syntax",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$filter=CardName eq",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "CardName eq"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error: unknown field in $select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=NoSuchField",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "NoSuchField"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Error: unknown object",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/NoSuchObjects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "NoSuchObjects"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "99 Cleanup and logout",
+      "item": [
+        {
+          "name": "Delete test data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=0"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=startswith(CardCode,'{{prefix}}')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "startswith(CardCode,'{{prefix}}')"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const base = pm.environment.get('baseUrl');",
+                  "const cookie = `B1SESSION=${pm.environment.get('B1SESSION')}; ROUTEID=${pm.environment.get('ROUTEID') || ''}`;",
+                  "const codes = (pm.response.json().value || []).map(r => r.CardCode);",
+                  "const remove = (i) => {",
+                  "  if (i >= codes.length) return;",
+                  "  pm.sendRequest({ url: `${base}/BusinessPartners('${codes[i]}')`, method: 'DELETE', header: { Cookie: cookie } }, (err, res) => {",
+                  "    pm.test(`test partner ${codes[i]} deleted`, () => pm.expect(res.code).to.eql(204));",
+                  "    remove(i + 1);",
+                  "  });",
+                  "};",
+                  "remove(0);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Logout"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));",
+                  "pm.test('no body', () => pm.expect(pm.response.text()).to.eql(''));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "After logout the session is rejected",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });",
+                  "pm.test('error code 301', () => pm.expect(String(pm.response.json().error.code)).to.eql('301'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

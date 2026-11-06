@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/mock-sl/" />
+  <Folder Name="/mock-sl/src/">
+    <Project Path="mock-sl/src/MockSl.Api/MockSl.Api.csproj" />
+    <Project Path="mock-sl/src/MockSl.Application/MockSl.Application.csproj" />
+    <Project Path="mock-sl/src/MockSl.Domain/MockSl.Domain.csproj" />
+    <Project Path="mock-sl/src/MockSl.Infrastructure/MockSl.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/mock-sl/tests/">
+    <Project Path="mock-sl/tests/MockSl.UnitTests/MockSl.UnitTests.csproj" />
+  </Folder>
+</Solution>

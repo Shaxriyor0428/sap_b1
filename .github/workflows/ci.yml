@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore SapB1.slnx
+
+      - name: Build
+        run: dotnet build SapB1.slnx --no-restore --configuration Release
+
+      - name: Check formatting
+        run: dotnet format SapB1.slnx --no-restore --verify-no-changes
+
+      - name: Unit tests
+        run: dotnet test SapB1.slnx --no-build --configuration Release

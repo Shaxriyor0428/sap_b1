@@ -1,0 +1,27 @@
+# Secrets and local settings
+.env
+*.local.json
+
+# Private: the roadmap, the contract notes and the explanations stay on this machine
+docs/
+
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+*.trx
+coverage*.xml
+
+# Node tooling (newman)
+node_modules/
+
+# Claude Code local state
+.claude/settings.local.json
+
+# OS
+Thumbs.db
+.DS_Store

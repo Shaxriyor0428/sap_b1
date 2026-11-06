@@ -1,0 +1,37 @@
+# Defaults make "docker compose up" work without a .env file. They only protect local mock data.
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sap_mock}
+      POSTGRES_USER: ${POSTGRES_USER:-sap_mock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sap_mock_password}
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+      # Runs once, in file name order, when the volume is empty.
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # TCP on purpose: during init the temporary server only listens on a socket.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-sap_mock} -d ${POSTGRES_DB:-sap_mock}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  mock-sl:
+    build:
+      context: .
+      dockerfile: mock-sl/Dockerfile
+    environment:
+      MOCK_DB_CONNECTION: "Host=db;Port=5432;Database=${POSTGRES_DB:-sap_mock};Username=${POSTGRES_USER:-sap_mock};Password=${POSTGRES_PASSWORD:-sap_mock_password}"
+      MOCK_COMPANY_DB: ${MOCK_COMPANY_DB:-TEST}
+      MOCK_SESSION_TIMEOUT_MINUTES: ${MOCK_SESSION_TIMEOUT_MINUTES:-30}
+    ports:
+      - "${MOCK_SL_HOST_PORT:-50000}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
