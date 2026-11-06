@@ -26,7 +26,8 @@ public static class ResourceEndpoints
         CancellationToken cancellationToken)
     {
         var path = ResourcePath.Parse(resource ?? string.Empty);
-        var entity = EntityCatalog.Find(path.EntitySet) ?? throw SapErrors.UnrecognizedResource();
+        var definition = EntityCatalog.Find(path.EntitySet) ?? throw SapErrors.UnrecognizedResource();
+        var entity = await handler.WithUserFieldsAsync(definition, cancellationToken);
 
         var key = path.Key is null ? null : EntityKey.Bind(entity, path.Key);
 

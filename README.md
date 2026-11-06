@@ -5,7 +5,7 @@ SAP Business One Service Layer'ning nusxasi (mock) va unga HTTP orqali ulanadiga
 - Reja: [`PLAN.md`](PLAN.md)
 - Service Layer shartnomasi va tushuntirishlar `docs/` papkasida. U private va git'da saqlanmaydi.
 
-> **Holat:** 2-bosqich: mock'da barcha obyektlar va biznes qoidalar, backend'da mijozlar bilan ishlash, oziq-ovqat do'koni skripti tayyor. `$expand`, UDF, SQL vazifalar va SQLQueries keyingi bosqichlarda qo'shiladi.
+> **Holat:** 3-bosqich: mock'da barcha obyektlar, biznes qoidalar, `$expand` va UDF, backend'da mijozlar va hudud bilan ishlash, oziq-ovqat do'koni skripti tayyor. SQL vazifalar va SQLQueries keyingi bosqichlarda qo'shiladi.
 
 ## Kerakli dasturlar
 
@@ -34,6 +34,8 @@ Bazani toza holatga qaytarish:
 docker compose down -v
 ```
 
+Jadvallar faqat yangi volume'da yaratiladi. Kodni yangilagach yangi jadval qo'shilgan bo'lsa, masalan `CUFD`, shu buyruqni bir marta ishlating, aks holda mock so'rovlarga 500 qaytaradi.
+
 Python kabi avval IPv6 ni sinaydigan dasturlar Windows'da `localhost` bilan sekin ishlashi mumkin. Bunday holatda `127.0.0.1` yozing. `curl`, Postman va `newman` `localhost` bilan ishlaydi.
 
 ## Mock Service Layer obyektlari
@@ -49,6 +51,27 @@ Python kabi avval IPv6 ni sinaydigan dasturlar Windows'da `localhost` bilan seki
 | `IncomingPayments` | `ORCT`, `RCT2` | Ro'yxat, olish, yaratish, o'zgartirish, `Cancel`. O'chirib bo'lmaydi |
 | `VendorPayments` | `OVPM`, `VPM2` | Ro'yxat, olish, yaratish, o'zgartirish, `Cancel`. O'chirib bo'lmaydi |
 | `CompanyService_GetPeriods`, `CompanyService_GetPeriod` | `OACP` | Standart hisoblarni o'qish |
+| `UserFieldsMD` | `CUFD` va jadvaldagi `U_` ustun | Ro'yxat, olish, yaratish, o'zgartirish, o'chirish |
+
+`$expand=BusinessPartner` `Invoices`, `PurchaseInvoices` va `IncomingPayments`da ishlaydi, ichida `$select` bilan:
+
+```http
+GET /b1s/v2/Invoices(1)?$select=DocEntry,DocNum,DocTotal&$expand=BusinessPartner($select=CardName,Phone1)
+```
+
+## UDF: hudud maydoni
+
+```http
+POST /b1s/v2/UserFieldsMD
+{"Name":"Region","Type":"db_Alpha","Size":50,"Description":"Hudud","SubType":"st_None","TableName":"OCRD"}
+
+PATCH /b1s/v2/BusinessPartners('C0001')
+{"U_Region":"Toshkent"}
+
+GET /b1s/v2/BusinessPartners?$filter=U_Region eq 'Toshkent'
+```
+
+`Name`da `U_` yozilmaydi, ustun va API maydoni `U_Region` bo'ladi. Mock'da maydon darhol ishlaydi. Real SAP'da Service Layer'ni qayta ishga tushirish kerak bo'lishi mumkin.
 
 ## Oziq-ovqat do'koni skripti
 
@@ -72,7 +95,7 @@ Real SAP'da ishga tushirish uchun `.env`da `SL_USERNAME`, `SL_PASSWORD`, `SL_WAR
 |---|---|
 | `POST /api/login` | Kirish: `{"userName":"manager","password":"1234"}`, token qaytaradi |
 | `POST /api/logout` | Chiqish |
-| `GET /api/customers` | Ro'yxat. Parametrlar: `name`, `phone`, `address`, `page`, `pageSize` (standart 20, eng ko'pi 100) |
+| `GET /api/customers` | Ro'yxat. Parametrlar: `name`, `phone`, `address`, `region`, `page`, `pageSize` (standart 20, eng ko'pi 100). `region` aniq taqqoslanadi: `U_Region eq 'Toshkent'` |
 | `POST /api/customers` | Yaratish: `code`, `name`, `phone`, `cellular`, `email`, `address`, `city` |
 | `PATCH /api/customers/{code}` | O'zgartirish: faqat yuborilgan maydonlar o'zgaradi |
 | `DELETE /api/customers/{code}` | O'chirish |
@@ -138,6 +161,8 @@ npx newman run postman/SapB1.postman_collection.json -e postman/mock.postman_env
 Testlar o'z ma'lumotlarini `PM` va `PD` prefikslari bilan yaratadi. `PM` ma'lumotlari oxirida o'chiriladi. `PD` hujjatlari esa qoladi, chunki hujjatni o'chirib bo'lmaydi, lekin har ishga tushirish yangi kodlar ishlatadi, shuning uchun to'plamni qayta ishga tushirish mumkin.
 
 Mock environment'ida hisob-kitoblar soliqsiz. Real SAP'da soliq bor bo'lsa, `07 Documents and payments` papkasidagi aniq summalar farq qilishi mumkin.
+
+`08 Expand and UDF` papkasi `U_Region`ni yaratadi va u bazada qoladi. Sinov maydonlarini esa o'zi o'chiradi. Real SAP'da yangi maydon Service Layer qayta ishga tushmaguncha ko'rinmasligi mumkin, bunda birinchi ishga tushirishda shu papkaning maydonni yozadigan so'rovlari tushadi. `IncomingPayments` uchun `$expand` real SAP'da rad etilishi mumkin: bu hujjat talabi, EDMX'da esa bunday bog'lanish yo'q.
 
 SQL vazifalari faqat do'kon ma'lumotlariga mo'ljallangan, shuning uchun ulardan oldin bazani tozalab, faqat do'kon skriptini ishga tushiring.
 

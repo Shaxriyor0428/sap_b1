@@ -127,7 +127,7 @@ public class ServiceLayerClientTests
                   "@odata.etag": "W/\"1\"",
                   "CardCode": "C1", "CardName": "Ali", "CardType": "cCustomer", "Phone1": "90",
                   "Cellular": null, "EmailAddress": "a@b.uz", "Address": "A", "City": "T",
-                  "CurrentAccountBalance": 1500.5, "GroupCode": 100, "ContactEmployees": []
+                  "CurrentAccountBalance": 1500.5, "GroupCode": 100, "ContactEmployees": [], "U_Region": "Toshkent"
                 }
               ],
               "@odata.nextLink": "BusinessPartners?$skip=20"
@@ -136,7 +136,7 @@ public class ServiceLayerClientTests
 
         var partner = Assert.Single(await NewClient().ListBusinessPartnersAsync(Cookies, ListQuery(), default));
 
-        Assert.Equal(new BusinessPartner("C1", "Ali", "cCustomer", "90", null, "a@b.uz", "A", "T", 1500.5m), partner);
+        Assert.Equal(new BusinessPartner("C1", "Ali", "cCustomer", "90", null, "a@b.uz", "A", "T", 1500.5m, "Toshkent"), partner);
     }
 
     [Fact]

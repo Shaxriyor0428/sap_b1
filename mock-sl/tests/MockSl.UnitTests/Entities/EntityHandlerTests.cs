@@ -4,6 +4,7 @@ using MockSl.Application.OData;
 using MockSl.Application.Rules;
 using MockSl.Domain.Errors;
 using MockSl.Domain.Metadata;
+using MockSl.UnitTests.Fakes;
 
 namespace MockSl.UnitTests.Entities;
 
@@ -160,105 +161,4 @@ public class EntityHandlerTests
         ["City"] = null,
         ["Balance"] = 0m,
     });
-
-    private sealed class FakeEntityStore : IEntityStore, IEntitySession
-    {
-        public List<EntityRow> Rows { get; init; } = [];
-
-        public EntityRow? InsertedRow { get; init; }
-
-        public bool UpdateFinds { get; init; } = true;
-
-        public bool DeleteFinds { get; init; } = true;
-
-        public EntityQuery? LastQuery { get; private set; }
-
-        public bool UpdateCalled { get; private set; }
-
-        public bool Committed { get; private set; }
-
-        public bool SessionOpened { get; private set; }
-
-        public Task<IEntitySession> OpenSessionAsync(CancellationToken cancellationToken)
-        {
-            SessionOpened = true;
-            return Task.FromResult<IEntitySession>(this);
-        }
-
-        public Task<IReadOnlyList<EntityRow>> QueryAsync(EntityDefinition entity, EntityQuery query, CancellationToken cancellationToken)
-        {
-            LastQuery = query;
-            return Task.FromResult<IReadOnlyList<EntityRow>>(Rows);
-        }
-
-        public Task<EntityRow?> FindAsync(
-            EntityDefinition entity,
-            IReadOnlyList<FieldValue> key,
-            IReadOnlyList<FieldDefinition> columns,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(Rows.FirstOrDefault());
-
-        public Task<EntityRow?> FindForUpdateAsync(EntityDefinition entity, IReadOnlyList<FieldValue> key, CancellationToken cancellationToken) =>
-            Task.FromResult(Rows.FirstOrDefault());
-
-        public Task<EntityRow> InsertAsync(EntityDefinition entity, IReadOnlyList<FieldValue> values, CancellationToken cancellationToken) =>
-            Task.FromResult(InsertedRow!);
-
-        public Task<bool> UpdateAsync(
-            EntityDefinition entity,
-            IReadOnlyList<FieldValue> key,
-            IReadOnlyList<FieldValue> values,
-            CancellationToken cancellationToken)
-        {
-            UpdateCalled = true;
-            return Task.FromResult(UpdateFinds);
-        }
-
-        public Task<bool> DeleteAsync(EntityDefinition entity, IReadOnlyList<FieldValue> key, CancellationToken cancellationToken) =>
-            Task.FromResult(DeleteFinds);
-
-        public Task AddToNumberAsync(
-            EntityDefinition entity,
-            IReadOnlyList<FieldValue> key,
-            FieldDefinition field,
-            decimal amount,
-            CancellationToken cancellationToken) =>
-            Task.CompletedTask;
-
-        public Task<IReadOnlyList<EntityRow>> QueryChildrenAsync(
-            ChildDefinition child,
-            IReadOnlyList<object?> parentKeys,
-            CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<EntityRow>>([]);
-
-        public Task InsertChildAsync(
-            ChildDefinition child,
-            object? parentKey,
-            IReadOnlyList<FieldValue> values,
-            CancellationToken cancellationToken) =>
-            Task.CompletedTask;
-
-        public Task UpdateChildAsync(
-            ChildDefinition child,
-            object? parentKey,
-            object? rowKey,
-            IReadOnlyList<FieldValue> values,
-            CancellationToken cancellationToken) =>
-            Task.CompletedTask;
-
-        public Task UpdateAllChildrenAsync(
-            ChildDefinition child,
-            object? parentKey,
-            IReadOnlyList<FieldValue> values,
-            CancellationToken cancellationToken) =>
-            Task.CompletedTask;
-
-        public Task CommitAsync(CancellationToken cancellationToken)
-        {
-            Committed = true;
-            return Task.CompletedTask;
-        }
-
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-    }
 }

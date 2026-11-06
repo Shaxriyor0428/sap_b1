@@ -116,5 +116,6 @@ public sealed class CustomerService(IServiceLayerGateway serviceLayer)
         partner.EmailAddress,
         partner.Address,
         partner.City,
-        partner.CurrentAccountBalance);
+        partner.CurrentAccountBalance,
+        partner.U_Region);
 }

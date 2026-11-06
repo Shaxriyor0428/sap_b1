@@ -12,6 +12,7 @@ public static class CustomerFilter
         AddContains(conditions, "CardName", query.Name);
         AddContains(conditions, "Phone1", query.Phone);
         AddContains(conditions, "Address", query.Address);
+        AddEquals(conditions, "U_Region", query.Region);
 
         return string.Join(" and ", conditions);
     }
@@ -21,6 +22,14 @@ public static class CustomerFilter
         if (!string.IsNullOrWhiteSpace(value))
         {
             conditions.Add($"contains({field},{Literal(value)})");
+        }
+    }
+
+    private static void AddEquals(List<string> conditions, string field, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            conditions.Add($"{field} eq {Literal(value)}");
         }
     }
 

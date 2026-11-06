@@ -9,11 +9,12 @@ public sealed record Customer(
     string? Email,
     string? Address,
     string? City,
-    decimal? Balance);
+    decimal? Balance,
+    string? Region);
 
 public sealed record CustomerPage(IReadOnlyList<Customer> Items, int Page, int PageSize, bool HasNextPage);
 
-public sealed record CustomerQuery(string? Name, string? Phone, string? Address, int Page, int PageSize);
+public sealed record CustomerQuery(string? Name, string? Phone, string? Address, string? Region, int Page, int PageSize);
 
 /// <summary>Nothing is required here on purpose: the Service Layer owns the rules and reports what is missing.</summary>
 public sealed record NewCustomer(

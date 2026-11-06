@@ -45,7 +45,7 @@ public sealed class FakeServiceLayer : IServiceLayerGateway
         LastQuery = query;
 
         IReadOnlyList<BusinessPartner> partners = Enumerable.Range(1, PartnerCount)
-            .Select(number => new BusinessPartner($"C{number}", $"Name {number}", "cCustomer", "+998", "+999", "a@b.uz", "Street", "City", 10m))
+            .Select(number => new BusinessPartner($"C{number}", $"Name {number}", "cCustomer", "+998", "+999", "a@b.uz", "Street", "City", 10m, "Toshkent"))
             .ToList();
 
         return Task.FromResult(partners);
@@ -63,7 +63,7 @@ public sealed class FakeServiceLayer : IServiceLayerGateway
         CancellationToken cancellationToken)
     {
         LastWrite = partner;
-        return Task.FromResult(new BusinessPartner(partner.CardCode!, partner.CardName, partner.CardType, partner.Phone1, partner.Cellular, partner.EmailAddress, partner.Address, partner.City, 0m));
+        return Task.FromResult(new BusinessPartner(partner.CardCode!, partner.CardName, partner.CardType, partner.Phone1, partner.Cellular, partner.EmailAddress, partner.Address, partner.City, 0m, null));
     }
 
     public Task UpdateBusinessPartnerAsync(

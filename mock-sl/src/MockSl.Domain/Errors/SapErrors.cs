@@ -103,6 +103,21 @@ public static class SapErrors
     public static ServiceLayerException NumberOutOfRange() =>
         new(BadRequest, "-10", "A number is too large to be stored");
 
+    public static ServiceLayerException InvalidUserFieldName(string name) =>
+        new(BadRequest, "-10", $"'{name}' is not a valid field name: use letters, digits and underscores, starting with a letter");
+
+    public static ServiceLayerException UserFieldTableNotSupported(string table) =>
+        new(BadRequest, "-10", $"User-defined fields cannot be added to table '{table}'");
+
+    public static ServiceLayerException UserFieldAlreadyExists(string table, string name) =>
+        new(BadRequest, "-10", $"Field '{name}' already exists in table '{table}'");
+
+    public static ServiceLayerException UserFieldSizeOutOfRange(int largest) =>
+        new(BadRequest, "-10", $"The size of a text field must be between 1 and {largest}");
+
+    public static ServiceLayerException UserFieldCannotShrink(int current) =>
+        new(BadRequest, "-10", $"The size cannot be smaller than the current size {current}");
+
     // The guide uses -1000 for malformed requests (p.47, p.77).
     // The texts of the -1000 errors below are mock choices.
 

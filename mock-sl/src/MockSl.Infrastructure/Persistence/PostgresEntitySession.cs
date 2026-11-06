@@ -29,6 +29,13 @@ public sealed class PostgresEntitySession(NpgsqlConnection connection, NpgsqlTra
         CancellationToken cancellationToken) =>
         ReadSingleOrNullAsync(EntitySqlBuilder.FindForUpdate(entity, key), cancellationToken);
 
+    public async Task<IReadOnlyList<EntityRow>> FindManyAsync(
+        EntityDefinition entity,
+        IReadOnlyList<object?> keys,
+        IReadOnlyList<FieldDefinition> columns,
+        CancellationToken cancellationToken) =>
+        keys.Count == 0 ? [] : await ReadRowsAsync(EntitySqlBuilder.FindMany(entity, keys, columns), cancellationToken);
+
     public async Task<EntityRow> InsertAsync(
         EntityDefinition entity,
         IReadOnlyList<FieldValue> values,
@@ -107,6 +114,24 @@ public sealed class PostgresEntitySession(NpgsqlConnection connection, NpgsqlTra
         CancellationToken cancellationToken) =>
         ExecuteWriteAsync(ChildSqlBuilder.UpdateAll(child, parentKey, values), cancellationToken);
 
+    public async Task AddColumnAsync(string table, FieldDefinition column, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await RunDdlAsync(UserFieldSqlBuilder.AddColumn(table, column), cancellationToken);
+        }
+        catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.DuplicateColumn)
+        {
+            throw SapErrors.UserFieldAlreadyExists(table, column.Name);
+        }
+    }
+
+    public Task ResizeColumnAsync(string table, string column, int size, CancellationToken cancellationToken) =>
+        RunDdlAsync(UserFieldSqlBuilder.ResizeColumn(table, column, size), cancellationToken);
+
+    public Task DropColumnAsync(string table, string column, CancellationToken cancellationToken) =>
+        RunDdlAsync(UserFieldSqlBuilder.DropColumn(table, column), cancellationToken);
+
     public Task CommitAsync(CancellationToken cancellationToken) => transaction.CommitAsync(cancellationToken);
 
     public async ValueTask DisposeAsync()
@@ -114,6 +139,9 @@ public sealed class PostgresEntitySession(NpgsqlConnection connection, NpgsqlTra
         await transaction.DisposeAsync();
         await connection.DisposeAsync();
     }
+
+    private Task RunDdlAsync(string sql, CancellationToken cancellationToken) =>
+        connection.ExecuteAsync(new CommandDefinition(sql, transaction: transaction, cancellationToken: cancellationToken));
 
     private async Task<List<EntityRow>> ReadRowsAsync(SqlStatement statement, CancellationToken cancellationToken)
     {
@@ -150,6 +178,7 @@ public sealed class PostgresEntitySession(NpgsqlConnection connection, NpgsqlTra
     {
         PostgresErrorCodes.ForeignKeyViolation => SapErrors.BrokenReference(),
         PostgresErrorCodes.NumericValueOutOfRange => SapErrors.NumberOutOfRange(),
+        PostgresErrorCodes.NotNullViolation => SapErrors.RequiredProperty(exception.TableName ?? "object", exception.ColumnName ?? "value"),
         _ => null,
     };
 

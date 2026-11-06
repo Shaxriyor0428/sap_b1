@@ -38,4 +38,27 @@ public static class SapEnums
         ("at_Revenues", "I"),
         ("at_Expenses", "E"),
         ("at_Other", "N"));
+
+    /// <summary>The letters are a mock choice: the SDK pages listing them could not be opened.</summary>
+    public static readonly EnumMap BoFieldTypes = new(
+        ("db_Alpha", "A"),
+        ("db_Memo", "M"),
+        ("db_Numeric", "N"),
+        ("db_Date", "D"),
+        ("db_Float", "B"));
+
+    /// <summary>The EDMX gives these as character codes, for example st_Phone=35, which is '#'.</summary>
+    public static readonly EnumMap BoFldSubTypes = new(
+        ("st_None", string.Empty),
+        ("st_Address", "?"),
+        ("st_Phone", "#"),
+        ("st_Time", "T"),
+        ("st_Rate", "R"),
+        ("st_Sum", "S"),
+        ("st_Price", "P"),
+        ("st_Quantity", "Q"),
+        ("st_Percentage", "%"),
+        ("st_Measurement", "M"),
+        ("st_Link", "B"),
+        ("st_Image", "I"));
 }

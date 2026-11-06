@@ -21,6 +21,19 @@ public abstract class EntityRules
         CancellationToken cancellationToken) =>
         Task.CompletedTask;
 
+    public virtual Task BeforeUpdateAsync(
+        IReadOnlyList<FieldValue> key,
+        DraftRow changes,
+        IEntitySession session,
+        CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    public virtual Task BeforeDeleteAsync(
+        IReadOnlyList<FieldValue> key,
+        IEntitySession session,
+        CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
     public virtual Task RunActionAsync(
         string action,
         IReadOnlyList<FieldValue> key,

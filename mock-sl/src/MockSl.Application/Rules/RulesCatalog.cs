@@ -8,17 +8,19 @@ public sealed class RulesCatalog(TimeProvider clock)
 {
     private static readonly EntityRules NoRules = new PlainRules();
 
-    private readonly Dictionary<EntityDefinition, EntityRules> _rules = new()
+    // By name: a definition with user-defined fields is a new copy of the same object.
+    private readonly Dictionary<string, EntityRules> _rules = new()
     {
-        [EntityCatalog.Items] = new ItemRules(),
-        [EntityCatalog.ChartOfAccounts] = new AccountRules(),
-        [EntityCatalog.Invoices] = new DocumentRules(EntityCatalog.Invoices, DocumentFlow.Sale, clock),
-        [EntityCatalog.PurchaseInvoices] = new DocumentRules(EntityCatalog.PurchaseInvoices, DocumentFlow.Purchase, clock),
-        [EntityCatalog.IncomingPayments] = new PaymentRules(EntityCatalog.IncomingPayments, PaymentFlow.Incoming, clock),
-        [EntityCatalog.VendorPayments] = new PaymentRules(EntityCatalog.VendorPayments, PaymentFlow.Outgoing, clock),
+        [EntityCatalog.Items.SetName] = new ItemRules(),
+        [EntityCatalog.ChartOfAccounts.SetName] = new AccountRules(),
+        [EntityCatalog.UserFieldsMD.SetName] = new UserFieldRules(),
+        [EntityCatalog.Invoices.SetName] = new DocumentRules(EntityCatalog.Invoices, DocumentFlow.Sale, clock),
+        [EntityCatalog.PurchaseInvoices.SetName] = new DocumentRules(EntityCatalog.PurchaseInvoices, DocumentFlow.Purchase, clock),
+        [EntityCatalog.IncomingPayments.SetName] = new PaymentRules(EntityCatalog.IncomingPayments, PaymentFlow.Incoming, clock),
+        [EntityCatalog.VendorPayments.SetName] = new PaymentRules(EntityCatalog.VendorPayments, PaymentFlow.Outgoing, clock),
     };
 
-    public EntityRules For(EntityDefinition entity) => _rules.GetValueOrDefault(entity, NoRules);
+    public EntityRules For(EntityDefinition entity) => _rules.GetValueOrDefault(entity.SetName, NoRules);
 
     private sealed class PlainRules : EntityRules;
 }

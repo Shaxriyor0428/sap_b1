@@ -2423,7 +2423,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('own field names', () => pm.expect(Object.keys(pm.response.json().items[0])).to.have.members(['code','name','phone','cellular','email','address','city','balance']));"
+                  "pm.test('own field names', () => pm.expect(Object.keys(pm.response.json().items[0])).to.have.members(['code','name','phone','cellular','email','address','city','balance', 'region']));"
                 ]
               }
             }
@@ -8068,6 +8068,4043 @@
                 "exec": [
                   "pm.test('status 201', () => pm.response.to.have.status(201));",
                   "pm.test('an account was chosen', () => pm.expect(pm.response.json().CashAccount).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 Expand and UDF",
+      "description": "Stage 3. Uses the run code and the cash account of folder 06. U_Region stays after the run, so the first request also accepts 'already exists'.",
+      "item": [
+        {
+          "name": "Expand: customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}X1\",\n  \"CardName\": \"Ali Expand\",\n  \"CardType\": \"cCustomer\",\n  \"Phone1\": \"+998901234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: supplier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}X2\",\n  \"CardName\": \"Ta'minotchi Expand\",\n  \"CardType\": \"cSupplier\",\n  \"Phone1\": \"+998711234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ItemCode\": \"{{run}}XI\",\n  \"ItemName\": \"Expand mol\",\n  \"InventoryItem\": \"tYES\",\n  \"SalesItem\": \"tYES\",\n  \"PurchaseItem\": \"tYES\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: purchase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}X2\",\n  \"DocDate\": \"2026-11-01\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}XI\",\n      \"Quantity\": 50,\n      \"UnitPrice\": 5\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('xPurchase', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: first sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}X1\",\n  \"DocDate\": \"2026-11-02\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}XI\",\n      \"Quantity\": 2,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('xInvoice', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: second sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}X1\",\n  \"DocDate\": \"2026-11-03\",\n  \"DocDueDate\": \"2026-11-30\",\n  \"DocumentLines\": [\n    {\n      \"ItemCode\": \"{{run}}XI\",\n      \"Quantity\": 1,\n      \"UnitPrice\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}X1\",\n  \"DocDate\": \"2026-11-04\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 5,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{xInvoice}}\",\n      \"SumApplied\": 5\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('xPayment', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: the example of the task",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$select=DocEntry,DocNum,DocTotal&$expand=BusinessPartner($select=CardName,Phone1)",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry,DocNum,DocTotal"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner($select=CardName,Phone1)"
+                }
+              ]
+            },
+            "description": "Task text and guide p.50."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only these fields: DocEntry, DocNum, DocTotal, BusinessPartner', () => pm.expect(Object.keys(pm.response.json()).filter(k => !k.startsWith('@')).sort()).to.eql([\"BusinessPartner\", \"DocEntry\", \"DocNum\", \"DocTotal\"]));",
+                  "pm.test('linked object has only: CardName, Phone1', () => pm.expect(Object.keys(pm.response.json().BusinessPartner).sort()).to.eql([\"CardName\", \"Phone1\"]));",
+                  "pm.test(\"BusinessPartner.CardName is Ali Expand\", () => pm.expect(pm.response.json().BusinessPartner.CardName).to.eql(\"Ali Expand\"));",
+                  "pm.test(\"BusinessPartner.Phone1 is +998901234567\", () => pm.expect(pm.response.json().BusinessPartner.Phone1).to.eql(\"+998901234567\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: PurchaseInvoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{xPurchase}})?$select=DocEntry,DocTotal&$expand=BusinessPartner($select=CardName,Phone1)",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{xPurchase}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry,DocTotal"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner($select=CardName,Phone1)"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only these fields: DocEntry, DocTotal, BusinessPartner', () => pm.expect(Object.keys(pm.response.json()).filter(k => !k.startsWith('@')).sort()).to.eql([\"BusinessPartner\", \"DocEntry\", \"DocTotal\"]));",
+                  "pm.test('linked object has only: CardName, Phone1', () => pm.expect(Object.keys(pm.response.json().BusinessPartner).sort()).to.eql([\"CardName\", \"Phone1\"]));",
+                  "pm.test(\"BusinessPartner.CardName is Ta'minotchi Expand\", () => pm.expect(pm.response.json().BusinessPartner.CardName).to.eql(\"Ta'minotchi Expand\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: IncomingPayments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{xPayment}})?$select=DocEntry,CashSum&$expand=BusinessPartner($select=CardName,Phone1)",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{xPayment}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry,CashSum"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner($select=CardName,Phone1)"
+                }
+              ]
+            },
+            "description": "The task asks for this link, but the EDMX has no BusinessPartner on Payment. Real SAP may refuse this request. Conflict 1 in the contract."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only these fields: DocEntry, CashSum, BusinessPartner', () => pm.expect(Object.keys(pm.response.json()).filter(k => !k.startsWith('@')).sort()).to.eql([\"BusinessPartner\", \"CashSum\", \"DocEntry\"]));",
+                  "pm.test('linked object has only: CardName, Phone1', () => pm.expect(Object.keys(pm.response.json().BusinessPartner).sort()).to.eql([\"CardName\", \"Phone1\"]));",
+                  "pm.test(\"BusinessPartner.CardName is Ali Expand\", () => pm.expect(pm.response.json().BusinessPartner.CardName).to.eql(\"Ali Expand\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: without select inside, every field of the partner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$select=DocEntry&$expand=BusinessPartner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only these fields: DocEntry, BusinessPartner', () => pm.expect(Object.keys(pm.response.json()).filter(k => !k.startsWith('@')).sort()).to.eql([\"BusinessPartner\", \"DocEntry\"]));",
+                  "pm.test(\"BusinessPartner.CardCode is {{run}}X1\", () => pm.expect(pm.response.json().BusinessPartner.CardCode).to.eql(pm.variables.replaceIn(\"{{run}}X1\")));",
+                  "pm.test(\"BusinessPartner.CardType is cCustomer\", () => pm.expect(pm.response.json().BusinessPartner.CardType).to.eql(\"cCustomer\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: guide p.83, select * and the link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$select=*,BusinessPartner&$expand=BusinessPartner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "*,BusinessPartner"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('whole document', () => pm.expect(pm.response.json().DocumentLines.length).to.eql(1));",
+                  "pm.test(\"BusinessPartner.CardName is Ali Expand\", () => pm.expect(pm.response.json().BusinessPartner.CardName).to.eql(\"Ali Expand\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: guide p.83, a path in select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$select=CardCode,BusinessPartner/CardName&$expand=BusinessPartner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode,BusinessPartner/CardName"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only these fields: CardCode, BusinessPartner', () => pm.expect(Object.keys(pm.response.json()).filter(k => !k.startsWith('@')).sort()).to.eql([\"BusinessPartner\", \"CardCode\"]));",
+                  "pm.test('linked object has only: CardName', () => pm.expect(Object.keys(pm.response.json().BusinessPartner).sort()).to.eql([\"CardName\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: guide p.83, a path without expand is ignored",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$select=CardCode,BusinessPartner/CardName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode,BusinessPartner/CardName"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only these fields: CardCode', () => pm.expect(Object.keys(pm.response.json()).filter(k => !k.startsWith('@')).sort()).to.eql([\"CardCode\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: a list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices?$select=DocEntry&$expand=BusinessPartner($select=CardName)&$filter=CardCode eq '{{run}}X1'&$orderby=DocEntry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner($select=CardName)"
+                },
+                {
+                  "key": "$filter",
+                  "value": "CardCode eq '{{run}}X1'"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "DocEntry"
+                }
+              ]
+            },
+            "description": "Guide p.51."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('2 rows, each with its partner', () => { const rows = pm.response.json().value; pm.expect(rows.length).to.eql(2); rows.forEach(r => pm.expect(r.BusinessPartner).to.eql({ CardName: 'Ali Expand' })); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: the next page keeps expand",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices?$select=DocEntry&$expand=BusinessPartner($select=CardName)&$filter=CardCode eq '{{run}}X1'&$orderby=DocEntry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner($select=CardName)"
+                },
+                {
+                  "key": "$filter",
+                  "value": "CardCode eq '{{run}}X1'"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "DocEntry"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const link = pm.response.json()['@odata.nextLink'];",
+                  "pm.test('next link has expand', () => pm.expect(decodeURIComponent(link)).to.include('$expand=BusinessPartner'));",
+                  "pm.environment.set('nextLink', link);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: follow the next link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{nextLink}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{nextLink}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('second row, with its partner', () => { const rows = pm.response.json().value; pm.expect(rows.length).to.eql(1); pm.expect(rows[0].BusinessPartner).to.eql({ CardName: 'Ali Expand' }); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: unknown link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$expand=Nope",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$expand",
+                  "value": "Nope"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: unknown field inside",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$expand=BusinessPartner($select=Nope)",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner($select=Nope)"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: broken text",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$expand=BusinessPartner(",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner("
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: VendorPayments has no such link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments?$expand=BusinessPartner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments"
+              ],
+              "query": [
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner"
+                }
+              ]
+            },
+            "description": "EDMX: no BusinessPartner on Payment. The task does not ask for it here."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expand: a partner has no link to itself",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}X1')?$expand=BusinessPartner",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}X1')"
+              ],
+              "query": [
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: add U_Region through the API",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"Region\",\n  \"Type\": \"db_Alpha\",\n  \"Size\": 50,\n  \"Description\": \"Hudud\",\n  \"SubType\": \"st_None\",\n  \"TableName\": \"OCRD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Name has no U_ prefix: the column and the API field become U_Region (guide p.86-87). Real SAP: a new field may stay invisible until the Service Layer is restarted (guide p.225)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('created, or already there from an earlier run', () => pm.expect(pm.response.code).to.be.oneOf([201, 400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: it is in the metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD?$filter=Name eq 'Region' and TableName eq 'OCRD'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "Name eq 'Region' and TableName eq 'OCRD'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json().value;",
+                  "pm.test('one field on OCRD', () => pm.expect(rows.length).to.eql(1));",
+                  "pm.test('text of size 50', () => { pm.expect(rows[0].Type).to.eql('db_Alpha'); pm.expect(rows[0].EditSize).to.eql(50); });",
+                  "pm.environment.set('regionFieldId', rows[0].FieldID);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: read by composite key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OCRD',FieldID={{regionFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OCRD',FieldID={{regionFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Name is Region\", () => pm.expect(pm.response.json().Name).to.eql(\"Region\"));",
+                  "pm.test(\"TableName is OCRD\", () => pm.expect(pm.response.json().TableName).to.eql(\"OCRD\"));",
+                  "pm.test(\"Description is Hudud\", () => pm.expect(pm.response.json().Description).to.eql(\"Hudud\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 1 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}001')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}001')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Toshkent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 2 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}002')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}002')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Toshkent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 3 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}003')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}003')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Samarqand\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 4 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}004')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}004')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Toshkent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 5 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}005')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}005')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Buxoro\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 6 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}006')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}006')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Samarqand\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 7 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}007')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}007')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Toshkent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 8 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}008')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}008')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Buxoro\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 9 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}009')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}009')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Andijon\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: PATCH customer 10 of 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}010')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}010')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Toshkent\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF task: the filter of the task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=0"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$filter=U_Region eq 'Toshkent'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "U_Region eq 'Toshkent'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix');",
+                  "const rows = pm.response.json().value;",
+                  "pm.test('every row is from Toshkent', () => rows.forEach(r => pm.expect(r.U_Region).to.eql('Toshkent')));",
+                  "pm.test('our customers are there', () => pm.expect(rows.map(r => r.CardCode)).to.include.members([p + '001', p + '002', p + '004', p + '007', p + '010']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: exact customers of one region",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=0"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode,U_Region&$filter=U_Region eq 'Toshkent' and startswith(CardCode,'{{prefix}}')&$orderby=CardCode",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode,U_Region"
+                },
+                {
+                  "key": "$filter",
+                  "value": "U_Region eq 'Toshkent' and startswith(CardCode,'{{prefix}}')"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "CardCode"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix');",
+                  "pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '001', p + '002', p + '004', p + '007', p + '010']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: the field is in the normal answer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}003')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}003')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"U_Region is Samarqand\", () => pm.expect(pm.response.json().U_Region).to.eql(\"Samarqand\"));",
+                  "pm.test(\"CardType is cCustomer\", () => pm.expect(pm.response.json().CardType).to.eql(\"cCustomer\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: a customer without a region",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}012')?$select=CardCode,U_Region",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}012')"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode,U_Region"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('U_Region is null', () => pm.expect(pm.response.json().U_Region).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: other filter functions work",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=0"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=CardCode&$filter=contains(U_Region,'marq') and startswith(CardCode,'{{prefix}}')&$orderby=CardCode",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "CardCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "contains(U_Region,'marq') and startswith(CardCode,'{{prefix}}')"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "CardCode"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix');",
+                  "pm.test('exact rows', () => pm.expect(pm.response.json().value.map(r => r.CardCode)).to.eql([p + '003', p + '006']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: order by the field",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$select=U_Region&$filter=U_Region ne null and startswith(CardCode,'{{prefix}}')&$orderby=U_Region asc&$top=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "U_Region"
+                },
+                {
+                  "key": "$filter",
+                  "value": "U_Region ne null and startswith(CardCode,'{{prefix}}')"
+                },
+                {
+                  "key": "$orderby",
+                  "value": "U_Region asc"
+                },
+                {
+                  "key": "$top",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('first by name', () => pm.expect(pm.response.json().value[0].U_Region).to.eql('Andijon'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: POST with the field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{prefix}}950\",\n  \"CardName\": \"Yangi mijoz\",\n  \"CardType\": \"cCustomer\",\n  \"U_Region\": \"Xiva\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"U_Region is Xiva\", () => pm.expect(pm.response.json().U_Region).to.eql(\"Xiva\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: PATCH the customer of the documents",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{run}}X1')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{run}}X1')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"Xiva\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: expand sees the field",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Invoices({{xInvoice}})?$select=DocEntry&$expand=BusinessPartner($select=CardCode,U_Region)",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Invoices({{xInvoice}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$expand",
+                  "value": "BusinessPartner($select=CardCode,U_Region)"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"BusinessPartner.U_Region is Xiva\", () => pm.expect(pm.response.json().BusinessPartner.U_Region).to.eql(\"Xiva\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: longer than the field",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}001')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}001')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Region\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: unknown field in PATCH",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners('{{prefix}}001')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners('{{prefix}}001')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_Nope\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF: unknown field in filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/BusinessPartners?$filter=U_Nope eq 'x'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "BusinessPartners"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "U_Nope eq 'x'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API region: login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/login",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"{{UserName}}\",\n  \"password\": \"{{Password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('apiToken', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API region: filter",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?region=Toshkent&pageSize=100",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "Toshkent"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix');",
+                  "const items = pm.response.json().items;",
+                  "pm.test('every customer is from Toshkent', () => items.forEach(c => pm.expect(c.region).to.eql('Toshkent')));",
+                  "pm.test('our customers are there', () => pm.expect(items.map(c => c.code)).to.include.members([p + '001', p + '002', p + '004', p + '007', p + '010']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API region: joins the other filters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?region=Samarqand&name=Bobur",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "Samarqand"
+                },
+                {
+                  "key": "name",
+                  "value": "Bobur"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.environment.get('prefix');",
+                  "pm.test('exact customer', () => pm.expect(pm.response.json().items.map(c => c.code)).to.include(p + '003'));",
+                  "pm.test('both conditions hold', () => pm.response.json().items.forEach(c => { pm.expect(c.region).to.eql('Samarqand'); pm.expect(c.name).to.include('Bobur'); }));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API region: the list shows the field",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?name=Komil Sobirov",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "Komil Sobirov"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('null when not set', () => pm.expect(pm.response.json().items[0].region).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API region: no such region",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?region=Yo'q joy",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "Yo'q joy"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('empty, the quote is safe', () => pm.expect(pm.response.json().items).to.eql([]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API region: a value cannot widen the filter",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/customers?region=x' or CardType eq 'cSupplier",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "x' or CardType eq 'cSupplier"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('empty', () => pm.expect(pm.response.json().items).to.eql([]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "API region: logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/logout",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: create a text field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"T{{run}}\",\n  \"Type\": \"db_Alpha\",\n  \"TableName\": \"OITM\",\n  \"Size\": 10,\n  \"Description\": \"Sinov\",\n  \"SubType\": \"st_None\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.87."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Name is T{{run}}\", () => pm.expect(pm.response.json().Name).to.eql(pm.variables.replaceIn(\"T{{run}}\")));",
+                  "pm.test(\"Type is db_Alpha\", () => pm.expect(pm.response.json().Type).to.eql(\"db_Alpha\"));",
+                  "pm.test(\"Size is 10\", () => pm.expect(pm.response.json().Size).to.eql(10));",
+                  "pm.test(\"EditSize is 10\", () => pm.expect(pm.response.json().EditSize).to.eql(10));",
+                  "pm.test(\"SubType is st_None\", () => pm.expect(pm.response.json().SubType).to.eql(\"st_None\"));",
+                  "pm.test(\"Description is Sinov\", () => pm.expect(pm.response.json().Description).to.eql(\"Sinov\"));",
+                  "pm.test(\"TableName is OITM\", () => pm.expect(pm.response.json().TableName).to.eql(\"OITM\"));",
+                  "pm.test(\"Mandatory is tNO\", () => pm.expect(pm.response.json().Mandatory).to.eql(\"tNO\"));",
+                  "pm.test('LinkedTable is null', () => pm.expect(pm.response.json().LinkedTable).to.eql(null));",
+                  "pm.test('FieldID is a number', () => pm.expect(pm.response.json().FieldID).to.be.a('number'));",
+                  "pm.test('Location has the composite key', () => pm.expect(decodeURI(pm.response.headers.get('Location'))).to.include(`UserFieldsMD(TableName='OITM',FieldID=${pm.response.json().FieldID})`));",
+                  "pm.environment.set('textFieldId', pm.response.json().FieldID);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: it appears at once, empty",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')?$select=ItemCode,U_T{{run}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "ItemCode,U_T{{run}}"
+                }
+              ]
+            },
+            "description": "Task text. Real SAP may need a restart first (guide p.225)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('null', () => pm.expect(pm.response.json()['U_T' + pm.environment.get('run')]).to.eql(null));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: the same name twice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"T{{run}}\",\n  \"Type\": \"db_Alpha\",\n  \"TableName\": \"OITM\",\n  \"Size\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: write a value",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_T{{run}}\": \"salom\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: filter by it",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items?$select=ItemCode&$filter=U_T{{run}} eq 'salom'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "ItemCode"
+                },
+                {
+                  "key": "$filter",
+                  "value": "U_T{{run}} eq 'salom'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('one row', () => pm.expect(pm.response.json().value.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: longer than 10",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_T{{run}}\": \"xxxxxxxxxxx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: change size and description",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"EditSize\": 20,\n  \"Description\": \"Internal Id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.88."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: changed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"EditSize is 20\", () => pm.expect(pm.response.json().EditSize).to.eql(20));",
+                  "pm.test(\"Size is 20\", () => pm.expect(pm.response.json().Size).to.eql(20));",
+                  "pm.test(\"Description is Internal Id\", () => pm.expect(pm.response.json().Description).to.eql(\"Internal Id\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: 20 characters now fit",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_T{{run}}\": \"xxxxxxxxxxxxxxxxxxxx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: cannot shrink",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"EditSize\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mock choice: stored values might not fit. Not verified on real SAP."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: the type cannot change",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Type\": \"db_Memo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Guide p.88: Type cannot be changed. The mock ignores it silently, real SAP may answer with an error."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('not a server error', () => pm.expect(pm.response.code).to.be.below(500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: the type stayed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Type is db_Alpha\", () => pm.expect(pm.response.json().Type).to.eql(\"db_Alpha\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})"
+              ]
+            },
+            "description": "Guide p.89."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: no longer in the metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{textFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: no longer in the filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items?$filter=U_T{{run}} eq 'x'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ],
+              "query": [
+                {
+                  "key": "$filter",
+                  "value": "U_T{{run}} eq 'x'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: no longer writable",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_T{{run}}\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF life: the item still reads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"ItemCode is {{run}}XI\", () => pm.expect(pm.response.json().ItemCode).to.eql(pm.variables.replaceIn(\"{{run}}XI\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Memo: create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"M{{run}}\",\n  \"Type\": \"db_Memo\",\n  \"TableName\": \"OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Type is db_Memo\", () => pm.expect(pm.response.json().Type).to.eql(\"db_Memo\"));",
+                  "pm.environment.set('MFieldId', pm.response.json().FieldID);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Memo: write",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_M{{run}}\": \"uzun matn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Memo: read",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')?$select=U_M{{run}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "U_M{{run}}"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('same value', () => pm.expect(pm.response.json()['U_M' + pm.environment.get('run')]).to.eql(\"uzun matn\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Memo: remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{MFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{MFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Numeric: create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"N{{run}}\",\n  \"Type\": \"db_Numeric\",\n  \"TableName\": \"OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Type is db_Numeric\", () => pm.expect(pm.response.json().Type).to.eql(\"db_Numeric\"));",
+                  "pm.environment.set('NFieldId', pm.response.json().FieldID);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Numeric: write",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_N{{run}}\": 42\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Numeric: read",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')?$select=U_N{{run}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "U_N{{run}}"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('same value', () => pm.expect(pm.response.json()['U_N' + pm.environment.get('run')]).to.eql(42));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Numeric: wrong kind of value",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_N{{run}}\": \"matn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Numeric: remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{NFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{NFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Date: create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"D{{run}}\",\n  \"Type\": \"db_Date\",\n  \"TableName\": \"OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Type is db_Date\", () => pm.expect(pm.response.json().Type).to.eql(\"db_Date\"));",
+                  "pm.environment.set('DFieldId', pm.response.json().FieldID);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Date: write",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_D{{run}}\": \"2026-11-05\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Date: read",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')?$select=U_D{{run}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "U_D{{run}}"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('same value', () => pm.expect(pm.response.json()['U_D' + pm.environment.get('run')]).to.eql(\"2026-11-05T00:00:00Z\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Date: wrong kind of value",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_D{{run}}\": \"matn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Date: remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{DFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{DFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Float: create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"F{{run}}\",\n  \"Type\": \"db_Float\",\n  \"TableName\": \"OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Type is db_Float\", () => pm.expect(pm.response.json().Type).to.eql(\"db_Float\"));",
+                  "pm.environment.set('FFieldId', pm.response.json().FieldID);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Float: write",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_F{{run}}\": 12.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Float: read",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')?$select=U_F{{run}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "U_F{{run}}"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('same value', () => pm.expect(pm.response.json()['U_F' + pm.environment.get('run')]).to.eql(12.5));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Float: wrong kind of value",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Items('{{run}}XI')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items('{{run}}XI')"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"U_F{{run}}\": \"matn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF type db_Float: remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OITM',FieldID={{FFieldId}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OITM',FieldID={{FFieldId}})"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: name with a space",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"a b\",\n  \"Type\": \"db_Alpha\",\n  \"TableName\": \"OITM\",\n  \"Size\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "DDL cannot use parameters, so the name is checked strictly before any SQL."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: name starting with a digit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"1abc\",\n  \"Type\": \"db_Alpha\",\n  \"TableName\": \"OITM\",\n  \"Size\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "DDL cannot use parameters, so the name is checked strictly before any SQL."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: name with SQL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"x\\\" TEXT; DROP TABLE \\\"OITM\\\"; --\",\n  \"Type\": \"db_Alpha\",\n  \"TableName\": \"OITM\",\n  \"Size\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "DDL cannot use parameters, so the name is checked strictly before any SQL."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: no name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Type\": \"db_Alpha\",\n  \"Size\": 5,\n  \"TableName\": \"OITM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: unknown type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"Yaxshi\",\n  \"Type\": \"db_Nope\",\n  \"TableName\": \"OITM\",\n  \"Size\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: no table",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"Yaxshi\",\n  \"Type\": \"db_Alpha\",\n  \"Size\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: unknown table",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"Yaxshi\",\n  \"Type\": \"db_Alpha\",\n  \"Size\": 5,\n  \"TableName\": \"NOPE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "These tables do not exist, so this is safe on real SAP as well."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: table with SQL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Name\": \"Yaxshi\",\n  \"Type\": \"db_Alpha\",\n  \"Size\": 5,\n  \"TableName\": \"NOPE\\\"; DROP\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "These tables do not exist, so this is safe on real SAP as well."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: key with one part",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD('OCRD')",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD('OCRD')"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: the unknown field does not exist",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/UserFieldsMD(TableName='OCRD',FieldID=99999)",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "UserFieldsMD(TableName='OCRD',FieldID=99999)"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('SAP error format', () => { const e = pm.response.json().error; pm.expect(e).to.be.an('object'); pm.expect(e).to.have.property('code'); pm.expect(e).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "UDF bad: the tables are still there",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/Items?$select=ItemCode&$top=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "Items"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "ItemCode"
+                },
+                {
+                  "key": "$top",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('reads', () => pm.expect(pm.response.json().value).to.be.an('array'));"
                 ]
               }
             }

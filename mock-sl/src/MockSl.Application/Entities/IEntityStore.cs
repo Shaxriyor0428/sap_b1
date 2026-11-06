@@ -42,6 +42,13 @@ public interface IEntitySession : IAsyncDisposable
         IReadOnlyList<FieldValue> key,
         CancellationToken cancellationToken);
 
+    /// <summary>Finds several rows by key in one query, for the objects a page links to.</summary>
+    Task<IReadOnlyList<EntityRow>> FindManyAsync(
+        EntityDefinition entity,
+        IReadOnlyList<object?> keys,
+        IReadOnlyList<FieldDefinition> columns,
+        CancellationToken cancellationToken);
+
     /// <summary>Returns the stored row, including database defaults.</summary>
     Task<EntityRow> InsertAsync(EntityDefinition entity, IReadOnlyList<FieldValue> values, CancellationToken cancellationToken);
 
@@ -88,6 +95,13 @@ public interface IEntitySession : IAsyncDisposable
         object? parentKey,
         IReadOnlyList<FieldValue> values,
         CancellationToken cancellationToken);
+
+    /// <summary>Adds the column of a user-defined field. The rules have already validated both names.</summary>
+    Task AddColumnAsync(string table, FieldDefinition column, CancellationToken cancellationToken);
+
+    Task ResizeColumnAsync(string table, string column, int size, CancellationToken cancellationToken);
+
+    Task DropColumnAsync(string table, string column, CancellationToken cancellationToken);
 
     Task CommitAsync(CancellationToken cancellationToken);
 }

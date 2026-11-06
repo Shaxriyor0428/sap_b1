@@ -17,7 +17,7 @@ public class CustomerServiceTests
         TimeSpan.FromMinutes(30),
         DateTimeOffset.UnixEpoch);
 
-    private static CustomerQuery Query(int page = 1, int pageSize = 20) => new(null, null, null, page, pageSize);
+    private static CustomerQuery Query(int page = 1, int pageSize = 20) => new(null, null, null, null, page, pageSize);
 
     [Theory]
     [InlineData(1, 20, 21, 0)]
@@ -77,7 +77,7 @@ public class CustomerServiceTests
 
         var customer = (await service.ListAsync(Session, Query(), default)).Items[0];
 
-        Assert.Equal(new Customer("C1", "Name 1", "+998", "+999", "a@b.uz", "Street", "City", 10m), customer);
+        Assert.Equal(new Customer("C1", "Name 1", "+998", "+999", "a@b.uz", "Street", "City", 10m, "Toshkent"), customer);
     }
 
     [Theory]

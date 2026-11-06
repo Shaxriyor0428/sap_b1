@@ -18,6 +18,25 @@ public sealed record CreatedEntity(JsonObject Value, string KeyInUrl);
 /// </summary>
 public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
 {
+    /// <summary>
+    /// Adds the user-defined fields as they are right now. It is read on every request,
+    /// so a new field is usable at once and there is no cache to keep in step.
+    /// </summary>
+    public async Task<EntityDefinition> WithUserFieldsAsync(EntityDefinition entity, CancellationToken cancellationToken)
+    {
+        await using var session = await store.OpenSessionAsync(cancellationToken);
+
+        var metadata = EntityCatalog.UserFieldsMD;
+        var query = new EntityQuery(metadata.Fields, null, [], null, 0);
+        var rows = await session.QueryAsync(metadata, query, cancellationToken);
+
+        var fields = rows.ToLookup(
+            row => row.Text("TableID")!,
+            row => UserFieldPolicy.ToField(row.Text("AliasID")!, row.Text("TypeID")!, row.Int("EditSize")));
+
+        return entity.WithUserFields(fields);
+    }
+
     public async Task<EntityPage> ListAsync(
         EntityDefinition entity,
         ODataQuery query,
@@ -30,12 +49,12 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
         var rows = await session.QueryAsync(entity, entityQuery, cancellationToken);
         var visibleRows = (plan.RowLimit is { } limit ? rows.Take(limit) : rows).ToList();
 
-        var children = await LoadChildrenAsync(session, entity, query.Children, visibleRows, cancellationToken);
+        var related = await LoadRelatedAsync(session, entity, query.Children, query.Expand, visibleRows, cancellationToken);
 
         var value = new JsonArray();
         foreach (var row in visibleRows)
         {
-            value.Add(ToJson(entity, query.Select, query.Children, row, children));
+            value.Add(ToJson(entity, query.Select, query.Children, query.Expand, row, related));
         }
 
         return new EntityPage(value, plan.NextPageAfter(rows.Count));
@@ -52,8 +71,8 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
         var row = await session.FindAsync(entity, key, ColumnsToRead(entity, query), cancellationToken)
             ?? throw SapErrors.EntityNotFound();
 
-        var children = await LoadChildrenAsync(session, entity, query.Children, [row], cancellationToken);
-        return ToJson(entity, query.Select, query.Children, row, children);
+        var related = await LoadRelatedAsync(session, entity, query.Children, query.Expand, [row], cancellationToken);
+        return ToJson(entity, query.Select, query.Children, query.Expand, row, related);
     }
 
     public async Task<CreatedEntity> CreateAsync(
@@ -72,8 +91,8 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
         await entityRules.AfterInsertAsync(draft, row, session, cancellationToken);
 
         // Read back, so the response shows what is really stored, including what the rules added.
-        var children = await LoadChildrenAsync(session, entity, entity.Children, [row], cancellationToken);
-        var json = ToJson(entity, entity.Fields, entity.Children, row, children);
+        var related = await LoadRelatedAsync(session, entity, entity.Children, [], [row], cancellationToken);
+        var json = ToJson(entity, entity.Fields, entity.Children, [], row, related);
 
         await session.CommitAsync(cancellationToken);
         return new CreatedEntity(json, EntityKey.Format(entity, row));
@@ -88,6 +107,8 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
         var changes = EntityBodyReader.ReadForUpdate(entity, body);
 
         await using var session = await store.OpenSessionAsync(cancellationToken);
+
+        await rules.For(entity).BeforeUpdateAsync(key, changes, session, cancellationToken);
 
         // A body with only ignored properties changes nothing, but the object must still exist.
         var found = changes.Values.Count > 0
@@ -114,6 +135,8 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
 
         await using var session = await store.OpenSessionAsync(cancellationToken);
 
+        await rules.For(entity).BeforeDeleteAsync(key, session, cancellationToken);
+
         if (!await session.DeleteAsync(entity, key, cancellationToken))
         {
             throw SapErrors.EntityNotFound();
@@ -134,9 +157,13 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
         await session.CommitAsync(cancellationToken);
     }
 
-    // The key is needed to attach collections, even when the client did not select it.
-    private static List<FieldDefinition> ColumnsToRead(EntityDefinition entity, ODataQuery query) =>
-        query.Children.Count == 0 ? [.. query.Select] : [.. query.Select.Union(entity.Key)];
+    // The key and the foreign keys are needed to attach related rows, even when the client did not select them.
+    // The key also keeps the list from being empty: $select=BusinessPartner names no column at all.
+    private static List<FieldDefinition> ColumnsToRead(EntityDefinition entity, ODataQuery query)
+    {
+        var foreignKeys = query.Expand.Select(item => entity.Field(item.Navigation.ForeignKeyField));
+        return query.Select.Concat(entity.Key).Concat(foreignKeys).Distinct().ToList();
+    }
 
     private static async Task InsertChildrenAsync(
         EntityDefinition entity,
@@ -145,8 +172,6 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
         IEntitySession session,
         CancellationToken cancellationToken)
     {
-        var parentKey = parent[entity.Key[0].Column];
-
         foreach (var child in draft.ChildrenWithRows)
         {
             var rowKey = child.FirstRowKey;
@@ -154,50 +179,76 @@ public sealed class EntityHandler(IEntityStore store, RulesCatalog rules)
             foreach (var row in draft.Rows(child))
             {
                 row.Set(child.RowKey, rowKey++);
-                await session.InsertChildAsync(child, parentKey, row.Values, cancellationToken);
+                await session.InsertChildAsync(child, parent[entity.Key[0].Column], row.Values, cancellationToken);
             }
         }
     }
 
-    private static async Task<Dictionary<ChildDefinition, ILookup<object?, EntityRow>>> LoadChildrenAsync(
+    private static async Task<RelatedRows> LoadRelatedAsync(
         IEntitySession session,
         EntityDefinition entity,
         IReadOnlyList<ChildDefinition> children,
+        IReadOnlyList<ExpandItem> expand,
         IReadOnlyList<EntityRow> parents,
         CancellationToken cancellationToken)
     {
-        var loaded = new Dictionary<ChildDefinition, ILookup<object?, EntityRow>>();
-        if (children.Count == 0 || parents.Count == 0)
+        var related = new RelatedRows();
+        if (parents.Count == 0)
         {
-            return loaded;
+            return related;
         }
 
-        // One query per collection for the whole page, not one per document.
-        var parentKeys = parents.Select(parent => parent[entity.Key[0].Column]).ToList();
-
+        // One query per collection and per link for the whole page, not one per row.
         foreach (var child in children)
         {
+            var parentKeys = parents.Select(parent => parent[entity.Key[0].Column]).ToList();
             var rows = await session.QueryChildrenAsync(child, parentKeys, cancellationToken);
-            loaded[child] = rows.ToLookup(row => row[child.ParentKeyColumn]);
+            related.Children[child] = rows.ToLookup(row => row[child.ParentKeyColumn]);
         }
 
-        return loaded;
+        foreach (var item in expand)
+        {
+            var target = item.Navigation.Target;
+            var foreignKey = entity.Field(item.Navigation.ForeignKeyField).Column;
+            var keys = parents.Select(parent => parent[foreignKey]).Where(key => key is not null).Distinct().ToList();
+            var columns = item.Select.Union(target.Key).ToList();
+
+            var rows = await session.FindManyAsync(target, keys, columns, cancellationToken);
+            related.Expanded[item] = rows.ToDictionary(row => row[target.Key[0].Column]!);
+        }
+
+        return related;
     }
 
     private static JsonObject ToJson(
         EntityDefinition entity,
         IEnumerable<FieldDefinition> fields,
         IReadOnlyList<ChildDefinition> children,
+        IReadOnlyList<ExpandItem> expand,
         EntityRow row,
-        Dictionary<ChildDefinition, ILookup<object?, EntityRow>> loaded)
+        RelatedRows related)
     {
         var json = EntitySerializer.ToJson(fields, row);
 
         foreach (var child in children)
         {
-            json[child.Name] = EntitySerializer.ToJsonArray(child, loaded[child][row[entity.Key[0].Column]]);
+            json[child.Name] = EntitySerializer.ToJsonArray(child, related.Children[child][row[entity.Key[0].Column]]);
+        }
+
+        foreach (var item in expand)
+        {
+            var foreignKey = row[entity.Field(item.Navigation.ForeignKeyField).Column];
+            var linked = foreignKey is null ? null : related.Expanded[item].GetValueOrDefault(foreignKey);
+            json[item.Navigation.Name] = linked is null ? null : EntitySerializer.ToJson(item.Select, linked);
         }
 
         return json;
+    }
+
+    private sealed class RelatedRows
+    {
+        public Dictionary<ChildDefinition, ILookup<object?, EntityRow>> Children { get; } = [];
+
+        public Dictionary<ExpandItem, Dictionary<object, EntityRow>> Expanded { get; } = [];
     }
 }

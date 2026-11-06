@@ -4,8 +4,8 @@ namespace Sap.UnitTests.Customers;
 
 public class CustomerFilterTests
 {
-    private static string Build(string? name = null, string? phone = null, string? address = null) =>
-        CustomerFilter.Build(new CustomerQuery(name, phone, address, Page: 1, PageSize: 20));
+    private static string Build(string? name = null, string? phone = null, string? address = null, string? region = null) =>
+        CustomerFilter.Build(new CustomerQuery(name, phone, address, region, Page: 1, PageSize: 20));
 
     [Fact]
     public void Without_parameters_only_customers_are_requested()
@@ -28,6 +28,36 @@ public class CustomerFilterTests
         Assert.Equal(
             "CardType eq 'cCustomer' and contains(CardName,'Ali') and contains(Phone1,'90') and contains(Address,'Navoiy')",
             Build("Ali", "90", "Navoiy"));
+    }
+
+    [Fact]
+    public void Region_is_compared_exactly_as_in_the_task()
+    {
+        Assert.Equal("CardType eq 'cCustomer' and U_Region eq 'Toshkent'", Build(region: "Toshkent"));
+    }
+
+    [Fact]
+    public void Region_joins_the_other_filters()
+    {
+        Assert.Equal(
+            "CardType eq 'cCustomer' and contains(CardName,'Ali') and U_Region eq 'Toshkent'",
+            Build(name: "Ali", region: "Toshkent"));
+    }
+
+    [Fact]
+    public void A_region_cannot_close_the_string_and_widen_the_filter()
+    {
+        Assert.Equal(
+            "CardType eq 'cCustomer' and U_Region eq 'x'' or CardType eq ''cSupplier'",
+            Build(region: "x' or CardType eq 'cSupplier"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Empty_region_adds_no_condition(string region)
+    {
+        Assert.Equal("CardType eq 'cCustomer'", Build(region: region));
     }
 
     [Theory]

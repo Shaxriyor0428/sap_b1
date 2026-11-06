@@ -41,6 +41,17 @@ public static class EntitySqlBuilder
         return new SqlStatement(sql, parameters.Values);
     }
 
+    public static SqlStatement FindMany(
+        EntityDefinition entity,
+        IReadOnlyList<object?> keys,
+        IReadOnlyList<FieldDefinition> columns)
+    {
+        var parameters = new ParameterBag();
+        var names = string.Join(", ", keys.Select(parameters.Add));
+        var sql = $"SELECT {ColumnList(columns)} FROM {SqlNames.Quote(entity.Table)} WHERE {SqlNames.Quote(entity.Key[0].Column)} IN ({names})";
+        return new SqlStatement(sql, parameters.Values);
+    }
+
     /// <summary>
     /// NO KEY UPDATE, not plain UPDATE. Inserting a document line already takes a foreign key lock on
     /// its item. Plain FOR UPDATE conflicts with that lock, so two sales of one item would each wait

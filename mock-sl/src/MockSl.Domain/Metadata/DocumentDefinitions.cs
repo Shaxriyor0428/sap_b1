@@ -10,7 +10,8 @@ internal static class DocumentDefinitions
         string setName,
         string table,
         string linesTable,
-        string? installmentsTable)
+        string? installmentsTable,
+        IReadOnlyList<NavigationDefinition> navigations)
     {
         var children = new List<ChildDefinition> { CreateLines(linesTable) };
         if (installmentsTable is not null)
@@ -44,10 +45,15 @@ internal static class DocumentDefinitions
                 FieldDefinition.Text("Comments", maxLength: 254),
             ],
             children: children,
-            canDelete: false);
+            canDelete: false,
+            navigations: navigations);
     }
 
-    public static EntityDefinition CreatePayment(string setName, string table, string invoicesTable) => new(
+    public static EntityDefinition CreatePayment(
+        string setName,
+        string table,
+        string invoicesTable,
+        IReadOnlyList<NavigationDefinition> navigations) => new(
         setName,
         typeName: "Payment",
         table,
@@ -88,7 +94,8 @@ internal static class DocumentDefinitions
                     FieldDefinition.Integer("InstallmentId", column: "InstId"),
                 ]),
         ],
-        canDelete: false);
+        canDelete: false,
+        navigations: navigations);
 
     private static ChildDefinition CreateLines(string table) => new(
         name: "DocumentLines",

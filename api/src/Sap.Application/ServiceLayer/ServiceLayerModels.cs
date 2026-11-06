@@ -18,7 +18,8 @@ public sealed record BusinessPartner(
     string? EmailAddress,
     string? Address,
     string? City,
-    decimal? CurrentAccountBalance);
+    decimal? CurrentAccountBalance,
+    string? U_Region);
 
 /// <summary>A body for POST or PATCH. Null properties are not sent, so PATCH leaves those fields unchanged.</summary>
 public sealed record BusinessPartnerWrite

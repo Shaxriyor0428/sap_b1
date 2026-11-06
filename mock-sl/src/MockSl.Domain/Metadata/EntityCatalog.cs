@@ -91,17 +91,43 @@ public static class EntityCatalog
             FieldDefinition.Enumeration("AccountType", SapEnums.BoAccountTypes, column: "ActType"),
         ]);
 
+    private static readonly IReadOnlyList<NavigationDefinition> ToBusinessPartner =
+        [new NavigationDefinition("BusinessPartner", BusinessPartners, "CardCode")];
+
     public static readonly EntityDefinition Invoices =
-        DocumentDefinitions.CreateDocument("Invoices", "OINV", "INV1", installmentsTable: "INV6");
+        DocumentDefinitions.CreateDocument("Invoices", "OINV", "INV1", installmentsTable: "INV6", ToBusinessPartner);
 
     public static readonly EntityDefinition PurchaseInvoices =
-        DocumentDefinitions.CreateDocument("PurchaseInvoices", "OPCH", "PCH1", installmentsTable: null);
+        DocumentDefinitions.CreateDocument("PurchaseInvoices", "OPCH", "PCH1", installmentsTable: null, ToBusinessPartner);
 
+    /// <summary>The task asks for BusinessPartner here. The EDMX has no such link on Payment, so real SAP may refuse it.</summary>
     public static readonly EntityDefinition IncomingPayments =
-        DocumentDefinitions.CreatePayment("IncomingPayments", "ORCT", "RCT2");
+        DocumentDefinitions.CreatePayment("IncomingPayments", "ORCT", "RCT2", ToBusinessPartner);
 
     public static readonly EntityDefinition VendorPayments =
-        DocumentDefinitions.CreatePayment("VendorPayments", "OVPM", "VPM2");
+        DocumentDefinitions.CreatePayment("VendorPayments", "OVPM", "VPM2", navigations: []);
+
+    /// <summary>Metadata of user-defined fields (guide p.86-89). Creating one adds a column, see UserFieldRules.</summary>
+    public static readonly EntityDefinition UserFieldsMD = new(
+        setName: "UserFieldsMD",
+        typeName: "UserFieldMD",
+        table: "CUFD",
+        keyFields: ["TableName", "FieldID"],
+        fields:
+        [
+            FieldDefinition.Text("Name", maxLength: 50, column: "AliasID") with { IsRequired = true, IsCreateOnly = true },
+            FieldDefinition.Enumeration("Type", SapEnums.BoFieldTypes, column: "TypeID") with { IsRequired = true, IsCreateOnly = true },
+            FieldDefinition.Integer("Size", column: "SizeID") with { IsCreateOnly = true },
+            FieldDefinition.Text("Description", maxLength: 80, column: "Descr"),
+            FieldDefinition.Enumeration("SubType", SapEnums.BoFldSubTypes, column: "EditType") with { IsCreateOnly = true },
+            FieldDefinition.Text("LinkedTable", maxLength: 21, column: "RTable") with { IsReadOnly = true },
+            FieldDefinition.Text("DefaultValue", maxLength: 254, column: "Dflt") with { IsReadOnly = true },
+            FieldDefinition.Text("TableName", maxLength: 21, column: "TableID") with { IsRequired = true, IsCreateOnly = true },
+            FieldDefinition.Integer("FieldID") with { IsReadOnly = true },
+            FieldDefinition.Integer("EditSize"),
+            FieldDefinition.Enumeration("Mandatory", SapEnums.BoYesNoEnum, column: "NotNull") with { IsReadOnly = true },
+            FieldDefinition.Text("LinkedUDO", maxLength: 20, column: "RelUDO") with { IsReadOnly = true },
+        ]);
 
     /// <summary>
     /// OACP: which account each kind of operation posts to. The EDMX has no entity set for it, only
@@ -125,8 +151,8 @@ public static class EntityCatalog
         ],
         canDelete: false);
 
-    private static readonly Dictionary<string, EntityDefinition> BySetName = new[]
-    {
+    private static readonly EntityDefinition[] BusinessObjects =
+    [
         BusinessPartners,
         EmployeesInfo,
         Items,
@@ -135,7 +161,17 @@ public static class EntityCatalog
         PurchaseInvoices,
         IncomingPayments,
         VendorPayments,
-    }.ToDictionary(entity => entity.SetName);
+    ];
+
+    private static readonly Dictionary<string, EntityDefinition> BySetName =
+        BusinessObjects.Append(UserFieldsMD).ToDictionary(entity => entity.SetName);
+
+    /// <summary>
+    /// The only tables a user-defined field can be added to. The name goes into DDL, where
+    /// parameters cannot be used, so this list is what keeps request text out of the statement.
+    /// </summary>
+    public static readonly IReadOnlySet<string> TablesWithUserFields =
+        BusinessObjects.Select(entity => entity.Table).ToHashSet();
 
     public static EntityDefinition? Find(string setName) => BySetName.GetValueOrDefault(setName);
 }

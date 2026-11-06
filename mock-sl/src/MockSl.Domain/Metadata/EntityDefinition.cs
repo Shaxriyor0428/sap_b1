@@ -16,7 +16,8 @@ public sealed class EntityDefinition
         IReadOnlyList<FieldDefinition> fields,
         Func<string, string>? duplicateKeyMessage = null,
         IReadOnlyList<ChildDefinition>? children = null,
-        bool canDelete = true)
+        bool canDelete = true,
+        IReadOnlyList<NavigationDefinition>? navigations = null)
     {
         SetName = setName;
         TypeName = typeName;
@@ -24,6 +25,7 @@ public sealed class EntityDefinition
         Fields = fields;
         Children = children ?? [];
         CanDelete = canDelete;
+        Navigations = navigations ?? [];
         DuplicateKeyMessage = duplicateKeyMessage ?? (key => $"{typeName} '{key}' already exists");
         _fieldsByName = fields.ToDictionary(field => field.Name);
         Key = keyFields.Select(name => _fieldsByName[name]).ToList();
@@ -46,6 +48,8 @@ public sealed class EntityDefinition
     /// <summary>Sales and purchase documents cannot be deleted, only cancelled or closed (guide p.27-28).</summary>
     public bool CanDelete { get; }
 
+    public IReadOnlyList<NavigationDefinition> Navigations { get; }
+
     /// <summary>Builds the -10 error text from the key value.</summary>
     public Func<string, string> DuplicateKeyMessage { get; }
 
@@ -53,9 +57,26 @@ public sealed class EntityDefinition
 
     public ChildDefinition? FindChild(string name) => Children.FirstOrDefault(child => child.Name == name);
 
+    public NavigationDefinition? FindNavigation(string name) => Navigations.FirstOrDefault(navigation => navigation.Name == name);
+
     /// <summary>For fields that must exist because the rules are written against them.</summary>
     public FieldDefinition Field(string name) => _fieldsByName[name];
 
     /// <summary>For collections that must exist because the rules are written against them.</summary>
     public ChildDefinition Child(string name) => Children.First(child => child.Name == name);
+
+    /// <summary>
+    /// A copy that also knows the user-defined fields of its table, and of the objects it links to.
+    /// Definitions are fixed once built, so a field created at run time needs a new copy.
+    /// </summary>
+    public EntityDefinition WithUserFields(ILookup<string, FieldDefinition> userFieldsByTable) => new(
+        SetName,
+        TypeName,
+        Table,
+        Key.Select(field => field.Name).ToList(),
+        [.. Fields, .. userFieldsByTable[Table]],
+        DuplicateKeyMessage,
+        Children,
+        CanDelete,
+        Navigations.Select(navigation => navigation with { Target = navigation.Target.WithUserFields(userFieldsByTable) }).ToList());
 }

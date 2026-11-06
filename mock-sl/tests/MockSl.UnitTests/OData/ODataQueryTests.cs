@@ -76,7 +76,7 @@ public class ODataQueryTests
     }
 
     [Theory]
-    [InlineData("$expand")]
+    [InlineData("$count")]
     [InlineData("$apply")]
     public void Options_that_are_not_implemented_are_rejected(string option)
     {

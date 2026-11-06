@@ -14,11 +14,12 @@ public sealed class CustomersController(CustomerService customers) : ControllerB
         string? name,
         string? phone,
         string? address,
+        string? region,
         int page = 1,
         int pageSize = CustomerService.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = new CustomerQuery(name, phone, address, page, pageSize);
+        var query = new CustomerQuery(name, phone, address, region, page, pageSize);
         return customers.ListAsync(HttpContext.GetUserSession(), query, cancellationToken);
     }
 
