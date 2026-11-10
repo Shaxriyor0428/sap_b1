@@ -2,8 +2,12 @@
 .env
 *.local.json
 
-# Private: the roadmap, the contract notes and the explanations stay on this machine
-docs/
+# Private: the roadmap, the explanations, the plan and the assistant notes stay on this machine.
+# Only the Service Layer contract is handed in.
+docs/*
+!docs/sl-contract.md
+/PLAN.md
+/CLAUDE.md
 
 # .NET build output
 bin/

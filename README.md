@@ -2,8 +2,7 @@
 
 SAP Business One Service Layer'ning nusxasi (mock) va unga HTTP orqali ulanadigan .NET backend. Real SAP'ga ulanish uchun faqat sozlamalar almashadi, kod o'zgarmaydi.
 
-- Reja: [`PLAN.md`](PLAN.md)
-- Service Layer shartnomasi va tushuntirishlar `docs/` papkasida. U private va git'da saqlanmaydi.
+- Service Layer shartnomasi: [`docs/sl-contract.md`](docs/sl-contract.md). Unda har bir obyekt uchun so'rov va javob namunasi, maydonlar mosligi, manbalar, ziddiyatlar va javobi topilmagan savollar bor.
 
 > **Holat:** barcha bosqichlar tayyor: mock'da barcha obyektlar, biznes qoidalar, `$expand`, UDF va `SQLQueries`, backend'da mijozlar va hudud bilan ishlash, oziq-ovqat do'koni skripti va SQL vazifalari. Mock'da to'liq tekshirilgan, real SAP'da hali tekshirilmagan.
 
