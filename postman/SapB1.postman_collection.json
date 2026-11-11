@@ -4992,6 +4992,83 @@
           ]
         },
         {
+          "name": "Purchase: update the comment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchaseEntry}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchaseEntry}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Comments\": \"Izoh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Purchase: the comment changed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices({{purchaseEntry}})?$select=DocEntry,Comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices({{purchaseEntry}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry,Comments"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Comments is Izoh\", () => pm.expect(pm.response.json().Comments).to.eql(\"Izoh\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Sale: a supplier cannot be the customer",
           "request": {
             "method": "POST",
@@ -6463,6 +6540,128 @@
           ]
         },
         {
+          "name": "Payment: list one page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments?$select=DocEntry&$filter=CardCode eq '{{run}}C1'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$filter",
+                  "value": "CardCode eq '{{run}}C1'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test('next link present', () => pm.expect(pm.response.json()['@odata.nextLink']).to.include('$skip=1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: update the remark",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{payment1}})",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{payment1}})"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Remarks\": \"Izoh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payment: the remark changed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/IncomingPayments({{payment1}})?$select=DocEntry,Remarks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "IncomingPayments({{payment1}})"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry,Remarks"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Remarks is Izoh\", () => pm.expect(pm.response.json().Remarks).to.eql(\"Izoh\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Payment: a closed sale cannot be paid",
           "request": {
             "method": "POST",
@@ -7657,6 +7856,51 @@
           ]
         },
         {
+          "name": "Purchase: list one page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/PurchaseInvoices?$select=DocEntry&$filter=CardCode eq '{{run}}S1'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "PurchaseInvoices"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$filter",
+                  "value": "CardCode eq '{{run}}S1'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test('next link present', () => pm.expect(pm.response.json()['@odata.nextLink']).to.include('$skip=1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Vendor payment: a customer cannot be paid here",
           "request": {
             "method": "POST",
@@ -8024,6 +8268,122 @@
                 "exec": [
                   "pm.test('status 200', () => pm.response.to.have.status(200));",
                   "pm.test(\"CurrentAccountBalance is -1250\", () => pm.expect(pm.response.json().CurrentAccountBalance).to.eql(-1250));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: a second one",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"CardCode\": \"{{run}}S1\",\n  \"DocDate\": \"2026-11-02\",\n  \"CashAccount\": \"{{cashAccount}}\",\n  \"CashSum\": 200,\n  \"PaymentInvoices\": [\n    {\n      \"DocEntry\": \"{{purchaseEntry}}\",\n      \"SumApplied\": 200\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('vendorPayment2', pm.response.json().DocEntry);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: list one page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Prefer",
+                "value": "odata.maxpagesize=1"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments?$select=DocEntry&$filter=CardCode eq '{{run}}S1'",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments"
+              ],
+              "query": [
+                {
+                  "key": "$select",
+                  "value": "DocEntry"
+                },
+                {
+                  "key": "$filter",
+                  "value": "CardCode eq '{{run}}S1'"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('1 rows', () => pm.expect(pm.response.json().value.length).to.eql(1));",
+                  "pm.test('next link present', () => pm.expect(pm.response.json()['@odata.nextLink']).to.include('$skip=1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vendor payment: cancel the second one",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/VendorPayments({{vendorPayment2}})/Cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "VendorPayments({{vendorPayment2}})/Cancel"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
                 ]
               }
             }
